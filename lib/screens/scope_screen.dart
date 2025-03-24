@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/crawl_config.dart';
+import '../widgets/option_card.dart';
+import '../widgets/information_tooltip.dart';
 
 class ScopeScreen extends StatelessWidget {
   final CrawlConfig config;
@@ -13,83 +15,116 @@ class ScopeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Placeholder for Scope step
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Title with tooltip
+        Row(
           children: [
-            const Text(
+            Text(
               'Set Crawl Scope',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
-            const Text('Choose which pages to crawl:'),
-            const SizedBox(height: 12),
-
-            RadioListTile<CrawlScope>(
-              title: const Text('Crawl entire website'),
-              subtitle: const Text(
-                'Re-visit current pagelist & find new pages',
-              ),
-              value: CrawlScope.entireSite,
-              groupValue: config.crawlScope,
-              onChanged: (value) {
-                // In a real implementation, this would update the config
-              },
-            ),
-
-            if (config.crawlScope == CrawlScope.entireSite)
-              Padding(
-                padding: const EdgeInsets.only(left: 48.0),
-                child: Row(
-                  children: [
-                    const Text('Page limit: '),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      width: 80,
-                      child: TextFormField(
-                        initialValue: config.pageLimit.toString(),
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(isDense: true),
-                        enabled: false,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-            RadioListTile<CrawlScope>(
-              title: const Text('Current page list only'),
-              subtitle: const Text('Only crawl pages already in your project'),
-              value: CrawlScope.currentPages,
-              groupValue: config.crawlScope,
-              onChanged: (value) {
-                // In a real implementation, this would update the config
-              },
-            ),
-
-            RadioListTile<CrawlScope>(
-              title: const Text('Specific pages only'),
-              subtitle: const Text('Crawl only specified URLs or sitemaps'),
-              value: CrawlScope.specificPages,
-              groupValue: config.crawlScope,
-              onChanged: (value) {
-                // In a real implementation, this would update the config
-              },
-            ),
-
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 16),
-            const Text(
-              'For this prototype, we are focusing on the later steps of the wizard. You can proceed to the next step.',
-              style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+            const SizedBox(width: 8),
+            const InformationTooltip(
+              message: 'Define the boundaries of your crawl.',
             ),
           ],
         ),
-      ),
+        const SizedBox(height: 8),
+        Text(
+          'Choose which parts of the website will be included in the crawl.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Scope options
+        SimpleOptionCard(
+          isSelected: config.crawlScope == CrawlScope.entireSite,
+          title: 'Entire Site',
+          subtitle: 'Crawl the entire website, finding new pages as it goes',
+          icon: Icons.public_outlined,
+          onTap: () {
+            config.crawlScope = CrawlScope.entireSite;
+            onConfigUpdate();
+          },
+        ),
+        const SizedBox(height: 12),
+
+        SimpleOptionCard(
+          isSelected: config.crawlScope == CrawlScope.currentPages,
+          title: 'Current Pages Only',
+          subtitle: 'Only crawl pages that are already in the page list',
+          icon: Icons.bookmark_border_outlined,
+          onTap: () {
+            config.crawlScope = CrawlScope.currentPages;
+            onConfigUpdate();
+          },
+        ),
+        const SizedBox(height: 12),
+
+        SimpleOptionCard(
+          isSelected: config.crawlScope == CrawlScope.specificPages,
+          title: 'Specific Pages Only',
+          subtitle: 'Only crawl a custom list of URLs you provide',
+          icon: Icons.list_alt_outlined,
+          onTap: () {
+            config.crawlScope = CrawlScope.specificPages;
+            onConfigUpdate();
+          },
+        ),
+
+        // Option to limit number of pages
+        if (config.crawlScope == CrawlScope.entireSite) ...[
+          const SizedBox(height: 24),
+          Text(
+            'Page Limit',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Set the maximum number of pages to crawl.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Slider(
+            value: config.pageLimit.toDouble(),
+            min: 10,
+            max: 1000,
+            divisions: 99,
+            label: '${config.pageLimit} pages',
+            onChanged: (value) {
+              config.pageLimit = value.round();
+              onConfigUpdate();
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('10 pages'),
+                Text(
+                  '${config.pageLimit} pages',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const Text('1000 pages'),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'theme/app_theme.dart';
-import 'screens/wizard_container.dart';
+import 'screens/home_screen.dart';
 
 void main() {
   runApp(const EasylingCrawlWizard());
@@ -14,7 +14,7 @@ class EasylingCrawlWizard extends StatelessWidget {
     return MaterialApp(
       title: 'Easyling Crawl Wizard',
       theme: AppTheme.lightTheme,
-      home: const WizardContainer(),
+      home: const HomeScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
