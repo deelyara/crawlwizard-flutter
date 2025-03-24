@@ -84,7 +84,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Focus your crawl on just the website sections you need.',
+          'Focus your crawl on specific website sections and avoid unnecessary content.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -100,12 +100,12 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Only crawl URLs that contain:',
+          'The crawler will only process URLs containing these paths:',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 12),
 
-        // Include prefixes list
+        // Include prefixes card
         Card(
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -117,6 +117,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Input field
                 Row(
@@ -142,7 +143,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                   ],
                 ),
 
-                // List of include rules
+                // List of include rules as chips
                 if (widget.config.includePrefixes.isEmpty) ...[
                   const SizedBox(height: 16),
                   Text(
@@ -154,22 +155,25 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                   ),
                 ] else ...[
                   const SizedBox(height: 16),
-                  const Divider(),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: widget.config.includePrefixes.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(widget.config.includePrefixes[index]),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: () => _removeIncludePrefix(index),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: List.generate(
+                      widget.config.includePrefixes.length,
+                      (index) => Chip(
+                        label: Text(widget.config.includePrefixes[index]),
+                        deleteIcon: const Icon(Icons.cancel, size: 18),
+                        onDeleted: () => _removeIncludePrefix(index),
+                        backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        side: BorderSide(color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
+                        labelStyle: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w500,
                         ),
-                      );
-                    },
+                        deleteIconColor: Theme.of(context).colorScheme.primary,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                      ),
+                    ),
                   ),
                 ],
               ],
@@ -188,12 +192,12 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Don\'t crawl URLs that contain:',
+          'The crawler will ignore URLs containing these paths:',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 12),
 
-        // Exclude prefixes list
+        // Exclude prefixes card
         Card(
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -205,6 +209,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Input field
                 Row(
@@ -230,7 +235,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                   ],
                 ),
 
-                // List of exclude rules
+                // List of exclude rules as chips
                 if (widget.config.excludePrefixes.isEmpty) ...[
                   const SizedBox(height: 16),
                   Text(
@@ -242,22 +247,25 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                   ),
                 ] else ...[
                   const SizedBox(height: 16),
-                  const Divider(),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: widget.config.excludePrefixes.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(widget.config.excludePrefixes[index]),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: () => _removeExcludePrefix(index),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: List.generate(
+                      widget.config.excludePrefixes.length,
+                      (index) => Chip(
+                        label: Text(widget.config.excludePrefixes[index]),
+                        deleteIcon: const Icon(Icons.cancel, size: 18),
+                        onDeleted: () => _removeExcludePrefix(index),
+                        backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.1),
+                        side: BorderSide(color: Theme.of(context).colorScheme.error.withOpacity(0.3)),
+                        labelStyle: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                          fontWeight: FontWeight.w500,
                         ),
-                      );
-                    },
+                        deleteIconColor: Theme.of(context).colorScheme.error,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                      ),
+                    ),
                   ),
                 ],
               ],

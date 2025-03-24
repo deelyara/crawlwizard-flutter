@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/crawl_config.dart';
+import '../widgets/modern_step_indicator.dart';
+import '../widgets/wizard_navigation.dart';
 import 'type_screen.dart';
 import 'scope_screen.dart';
 import 'restrictions_screen.dart';
@@ -7,250 +9,252 @@ import 'snapshot_screen.dart';
 import 'finetune_screen.dart';
 import 'recurrence_screen.dart';
 import 'review_screen.dart';
-import '../widgets/modern_step_indicator.dart';
-import '../widgets/wizard_navigation.dart';
 
 class WizardModal extends StatefulWidget {
-  const WizardModal({super.key});
+  final VoidCallback? onClose;
+  final VoidCallback? onComplete;
+
+  const WizardModal({
+    super.key,
+    this.onClose,
+    this.onComplete,
+  });
 
   @override
   State<WizardModal> createState() => _WizardModalState();
 }
 
 class _WizardModalState extends State<WizardModal> {
-  final CrawlConfig crawlConfig = CrawlConfig();
-  int currentStep = 0;
-  final int totalSteps = 7;
-
-  final List<String> stepTitles = [
-    'Select Type',
-    'Set Scope',
-    'Set Restrictions',
-    'Origin Snapshot',
+  int _currentStep = 0;
+  final CrawlConfig _config = CrawlConfig();
+  bool _fromReviewStep = false;
+  
+  // Step titles
+  final List<String> _stepTitles = [
+    'Type',
+    'Scope',
+    'Restrictions',
+    'Origin Snapshots',
     'Fine-tune',
     'Recurrence',
     'Review',
   ];
 
-  final List<IconData> stepIcons = [
-    Icons.category_outlined,
-    Icons.language_outlined,
-    Icons.filter_alt_outlined,
-    Icons.history_outlined,
-    Icons.tune_outlined,
-    Icons.repeat_outlined,
-    Icons.checklist_outlined,
-  ];
+  void _navigateToStep(int step) {
+    setState(() {
+      if (_currentStep == 6) {
+        // If coming from review step
+        _fromReviewStep = true;
+      }
+      _currentStep = step;
+    });
+  }
 
-  void goToNextStep() {
-    if (currentStep < totalSteps - 1) {
+  void _navigateToReview() {
+    setState(() {
+      _currentStep = 6;
+      _fromReviewStep = false;
+    });
+  }
+
+  void _nextStep() {
+    if (_currentStep < _stepTitles.length - 1) {
       setState(() {
-        currentStep++;
+        _currentStep++;
+        _fromReviewStep = false;
       });
     }
   }
 
-  void goToPreviousStep() {
-    if (currentStep > 0) {
+  void _previousStep() {
+    if (_currentStep > 0) {
       setState(() {
-        currentStep--;
+        _currentStep--;
+        _fromReviewStep = false;
       });
     }
   }
 
-  void goToStep(int step) {
-    if (step >= 0 && step < totalSteps) {
-      setState(() {
-        currentStep = step;
-      });
-    }
-  }
-
-  Widget getStepContent() {
-    switch (currentStep) {
-      case 0:
-        return TypeScreen(
-          config: crawlConfig,
-          onConfigUpdate: () => setState(() {}),
-        );
-      case 1:
-        return ScopeScreen(
-          config: crawlConfig,
-          onConfigUpdate: () => setState(() {}),
-        );
-      case 2:
-        return RestrictionsScreen(
-          config: crawlConfig,
-          onConfigUpdate: () => setState(() {}),
-        );
-      case 3:
-        return SnapshotScreen(
-          config: crawlConfig,
-          onConfigUpdate: () => setState(() {}),
-        );
-      case 4:
-        return FinetuneScreen(
-          config: crawlConfig,
-          onConfigUpdate: () => setState(() {}),
-        );
-      case 5:
-        return RecurrenceScreen(
-          config: crawlConfig,
-          onConfigUpdate: () => setState(() {}),
-        );
-      case 6:
-        return ReviewScreen(
-          config: crawlConfig,
-          onConfigUpdate: () => setState(() {}),
-          onEditStep: goToStep,
-        );
-      default:
-        return Container();
+  void _handleComplete() {
+    if (widget.onComplete != null) {
+      widget.onComplete!();
+    } else {
+      // Default implementation if no onComplete provided
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Crawl Started'),
+            content: const Text(
+              'Your crawl has been started. We\'ll notify you when it\'s completed.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(); // Close wizard too
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Dialog(
+      elevation: 0,
+      backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.all(24),
-      child: Container(
-        width: double.infinity,
-        height: MediaQuery.of(context).size.height * 0.9,
-        constraints: const BoxConstraints(maxWidth: 1200),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Scaffold(
-            appBar: AppBar(
-              title: Text(
-                'Crawl Wizard',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: 900,
+          maxHeight: 700,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Modal header with title and close button
+            Container(
+              padding: const EdgeInsets.only(left: 24, right: 16, top: 16, bottom: 16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 3,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
-              centerTitle: false,
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-              elevation: 0,
-            ),
-            body: Column(
-              children: [
-                // Title bar for current step
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Theme.of(context).colorScheme.outlineVariant,
-                        width: 1,
-                      ),
-                    ),
-                  ),
-                  child: Text(
-                    stepTitles[currentStep],
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Left sidebar with step indicator
-                      Container(
-                        width: 280,
-                        height: double.infinity,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 5,
-                              offset: const Offset(1, 0),
-                            ),
-                          ],
-                          border: Border(
-                            right: BorderSide(
-                              color:
-                                  Theme.of(context).colorScheme.outlineVariant,
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                        child: ModernStepIndicator(
-                          currentStep: currentStep,
-                          totalSteps: totalSteps,
-                          stepTitles: stepTitles,
-                          stepIcons: stepIcons,
-                          onStepTap: goToStep,
-                        ),
-                      ),
-                      // Main content area
-                      Expanded(
-                        child: Column(
+              child: Row(
+                children: [
+                  // Modal title
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Expanded(
-                              child: SingleChildScrollView(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(24.0),
-                                  child: getStepContent(),
-                                ),
+                            Icon(
+                              Icons.settings_outlined,
+                              color: theme.colorScheme.primary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Crawl Wizard: ${_stepTitles[_currentStep]}',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.onSurface,
                               ),
                             ),
-                            const Divider(height: 1),
-                            WizardNavigation(
-                              currentStep: currentStep,
-                              totalSteps: totalSteps,
-                              onNext: goToNextStep,
-                              onBack: goToPreviousStep,
-                              isLastStep: currentStep == totalSteps - 1,
-                              onComplete: () {
-                                // Handle crawl start
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      title: const Text('Crawl Started'),
-                                      content: const Text(
-                                        'Your crawl has been started. We\'ll let you know when it\'s done.',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                            Navigator.of(
-                                              context,
-                                            ).pop(); // Close the wizard too
-                                          },
-                                          child: const Text('OK'),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                            ),
                           ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  
+                  // Close button
+                  IconButton(
+                    onPressed: widget.onClose ?? () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                    tooltip: 'Close',
+                  ),
+                ],
+              ),
             ),
-          ),
+            
+            // Step indicator
+            ModernStepIndicator(
+              currentStep: _currentStep,
+              stepCount: _stepTitles.length,
+              stepTitles: _stepTitles,
+              onTap: (index) {
+                // Only allow navigating to completed steps
+                if (index <= _currentStep) {
+                  _navigateToStep(index);
+                }
+              },
+            ),
+            
+            // Main content area
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: _buildStepContent(),
+              ),
+            ),
+            
+            // Navigation footer
+            WizardNavigation(
+              currentStep: _currentStep,
+              totalSteps: _stepTitles.length,
+              onNext: _nextStep,
+              onBack: _previousStep,
+              isLastStep: _currentStep == _stepTitles.length - 1,
+              onComplete: _handleComplete,
+              isFromReviewStep: _fromReviewStep,
+              onBackToReview: _fromReviewStep ? _navigateToReview : null,
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Widget _buildStepContent() {
+    switch (_currentStep) {
+      case 0:
+        return TypeScreen(
+          config: _config,
+          onConfigUpdate: () => setState(() {}),
+        );
+      case 1:
+        return ScopeScreen(
+          config: _config,
+          onConfigUpdate: () => setState(() {}),
+        );
+      case 2:
+        return RestrictionsScreen(
+          config: _config,
+          onConfigUpdate: () => setState(() {}),
+        );
+      case 3:
+        return SnapshotScreen(
+          config: _config,
+          onConfigUpdate: () => setState(() {}),
+        );
+      case 4:
+        return FinetuneScreen(
+          config: _config,
+          onConfigUpdate: () => setState(() {}),
+        );
+      case 5:
+        return RecurrenceScreen(
+          config: _config,
+          onConfigUpdate: () => setState(() {}),
+        );
+      case 6:
+        return ReviewScreen(
+          config: _config,
+          onConfigUpdate: () => setState(() {}),
+          onEditStep: _navigateToStep,
+        );
+      default:
+        return const SizedBox.shrink();
+    }
   }
 }

@@ -9,7 +9,7 @@ enum CrawlType {
 
 enum CrawlScope { entireSite, currentPages, specificPages }
 
-enum SnapshotOption { useExisting, compareContent, rebuildAll }
+enum SnapshotOption { useExisting, compareContent, rebuildAll, createNew }
 
 enum RecurrenceFrequency { none, daily, weekly, monthly, custom }
 
@@ -55,6 +55,9 @@ class CrawlConfig {
   int recurrenceDayOfMonth = 1;
   bool useRotatingSnapshots = false;
   List<String> selectedRotatingSnapshots = [];
+  
+  // User note for the crawl (optional)
+  String? userNote;
 
   // Helper method to get estimated cost
   double getEstimatedCost() {

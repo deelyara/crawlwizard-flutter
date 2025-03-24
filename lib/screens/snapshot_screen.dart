@@ -17,314 +17,398 @@ class SnapshotScreen extends StatefulWidget {
 }
 
 class _SnapshotScreenState extends State<SnapshotScreen> {
-  // Sample data for available snapshots
+  // Sample data for available snapshots - this would be empty if no snapshots exist
   final List<String> availableSnapshots = [
-    'Latest Crawl (2025-03-22)',
-    'Production Snapshot (2025-03-15)',
-    'Translation Snapshot (2025-03-10)',
+    'Latest Crawl (2023-03-22)',
+    'Production Snapshot (2023-03-15)',
+    'Translation Snapshot (2023-03-10)',
   ];
 
-  // Track the expanded state of the advanced section
-  bool _isAdvancedExpanded = false;
+  // Simulate no snapshots for testing
+  final bool hasSnapshots = true; // Set to false to test no snapshots message
+
+  // Track selected handling option for new pages
+  late int _selectedHandlingOption;
+  // Track if we want to use a snapshot (separate from selected option)
+  late bool _useExistingSnapshot;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize based on the current config
+    _useExistingSnapshot = widget.config.snapshotOption == SnapshotOption.useExisting;
+    
+    if (widget.config.snapshotOption == SnapshotOption.rebuildAll) {
+      _selectedHandlingOption = 2; // The "Don't reuse existing pages" option
+    } else {
+      _selectedHandlingOption = widget.config.storeNewPages ? 0 : 1;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Title and description
         Text(
-          'Origin snapshot',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          'Origin Snapshots',
+          style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.primary,
           ),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'Select how to handle origin (source) content for this crawl.',
+        Text(
+          'Configure how to handle content changes since the last crawl',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 24),
-
-        // Snapshot options card
+        
+        // No snapshots warning if applicable
+        if (!hasSnapshots)
+          _buildNoSnapshotsWarning(theme),
+          
+        // Main snapshot configuration card
         Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: theme.colorScheme.outlineVariant,
+            ),
+          ),
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Snapshot options',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-
-                // Use existing snapshot option
-                RadioListTile<SnapshotOption>(
-                  title: Row(
-                    children: [
-                      const Text('Use existing snapshot'),
-                      const SizedBox(width: 8),
-                      InformationTooltip(
-                        message: 'Use content from existing snapshot as origin',
+                // Use snapshot from previous crawl option with switch
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Text(
+                            'Use snapshot from previous crawl',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          InformationTooltip(
+                            message: 'Compare the current content with a previous crawl to detect changes',
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  subtitle: const Text(
-                    'Only update changed content, use same origin source',
-                  ),
-                  value: SnapshotOption.useExisting,
-                  groupValue: widget.config.snapshotOption,
-                  onChanged: (value) {
-                    setState(() {
-                      widget.config.snapshotOption = value!;
-                      widget.onConfigUpdate();
-                    });
-                  },
-                ),
-
-                // Snapshot dropdown if use existing selected
-                if (widget.config.snapshotOption == SnapshotOption.useExisting)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 48.0, right: 16.0),
-                    child: DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: 'Select snapshot',
-                        isDense: true,
-                      ),
-                      value: availableSnapshots[0],
-                      items:
-                          availableSnapshots.map((snapshot) {
-                            return DropdownMenuItem<String>(
-                              value: snapshot,
-                              child: Text(
-                                snapshot,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            );
-                          }).toList(),
+                    ),
+                    Switch(
+                      value: _useExistingSnapshot,
                       onChanged: (value) {
                         setState(() {
-                          widget.config.selectedSnapshot = value!;
+                          _useExistingSnapshot = value;
+                          if (value) {
+                            // If we turn on the toggle, set the snapshot option
+                            widget.config.snapshotOption = SnapshotOption.useExisting;
+                            // Restore the previous option or default to store new pages
+                            widget.config.storeNewPages = _selectedHandlingOption == 0;
+                          } else {
+                            // If we turn off the toggle, set to rebuild all
+                            widget.config.snapshotOption = SnapshotOption.rebuildAll;
+                            // But keep the handling option for when we toggle back on
+                          }
                           widget.onConfigUpdate();
                         });
                       },
+                      activeColor: theme.colorScheme.primary,
                     ),
-                  ),
-
-                // Compare content option
-                RadioListTile<SnapshotOption>(
-                  title: Row(
-                    children: [
-                      const Text('Compare content with previous crawl'),
-                      const SizedBox(width: 8),
-                      InformationTooltip(
-                        message:
-                            'Identify changed content by comparing with a previous snapshot',
-                      ),
-                    ],
-                  ),
-                  subtitle: const Text(
-                    'Store only pages where content has changed',
-                  ),
-                  value: SnapshotOption.compareContent,
-                  groupValue: widget.config.snapshotOption,
-                  onChanged: (value) {
-                    setState(() {
-                      widget.config.snapshotOption = value!;
-                      widget.onConfigUpdate();
-                    });
-                  },
+                  ],
                 ),
-
-                // Comparison snapshot dropdown if compare content selected
-                if (widget.config.snapshotOption ==
-                    SnapshotOption.compareContent)
+                
+                const SizedBox(height: 4),
+                
+                // Subtitle with better visual separation
+                Text(
+                  'Compare content with a previous crawl to detect changes',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                
+                // Snapshot dropdown if enabled with improved styling
+                if (_useExistingSnapshot)
                   Padding(
-                    padding: const EdgeInsets.only(left: 48.0, right: 16.0),
-                    child: DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: 'Compare against',
-                        isDense: true,
-                      ),
-                      value: availableSnapshots[0],
-                      items:
-                          availableSnapshots.map((snapshot) {
-                            return DropdownMenuItem<String>(
-                              value: snapshot,
-                              child: Text(
-                                snapshot,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            );
-                          }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          widget.config.selectedSnapshot = value!;
-                          widget.onConfigUpdate();
-                        });
-                      },
+                    padding: const EdgeInsets.only(top: 16.0, right: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Label above the dropdown with better visibility
+                        Text(
+                          'Select snapshot to use:',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Improved dropdown styling
+                        DropdownButtonFormField<String>(
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            filled: true,
+                            fillColor: theme.colorScheme.surface,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: theme.colorScheme.outline),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: theme.colorScheme.outline.withOpacity(0.7)),
+                            ),
+                          ),
+                          icon: Icon(Icons.arrow_drop_down, color: theme.colorScheme.primary),
+                          dropdownColor: theme.colorScheme.surface,
+                          borderRadius: BorderRadius.circular(8),
+                          value: availableSnapshots.first,
+                          items: availableSnapshots
+                              .map((snapshot) => DropdownMenuItem<String>(
+                                    value: snapshot,
+                                    child: Text(
+                                      snapshot,
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: theme.colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  ))
+                              .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              widget.config.selectedSnapshot = value!;
+                              widget.onConfigUpdate();
+                            });
+                          },
+                        ),
+                      ],
                     ),
                   ),
-
-                // Extract all content option
-                RadioListTile<SnapshotOption>(
-                  title: Row(
-                    children: [
-                      const Text('Extract content from all pages'),
-                      const SizedBox(width: 8),
-                      InformationTooltip(
-                        message: 'Create a new snapshot with all content',
-                      ),
-                    ],
+                
+                // Divider to separate sections visually
+                if (_useExistingSnapshot) ...[
+                  const SizedBox(height: 24),
+                  Divider(color: theme.colorScheme.outlineVariant),
+                  const SizedBox(height: 16),
+                  
+                  Text(
+                    'How should new pages be handled?',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurface,
+                    ),
                   ),
-                  subtitle: const Text(
-                    'Ignore previous snapshots and collect everything',
+                  const SizedBox(height: 16),
+                  
+                  // Option 1: Reuse existing pages and store new pages
+                  _buildRadioOption(
+                    value: 0,
+                    title: 'Reuse existing pages and store new pages',
+                    subtitle: 'For every visited page, the crawler checks whether it is in the Snapshot already. If it isn\'t, it adds it. This option doesn\'t update existing pages in the Snapshot',
+                    theme: theme,
                   ),
-                  value: SnapshotOption.rebuildAll,
-                  groupValue: widget.config.snapshotOption,
-                  onChanged: (value) {
-                    setState(() {
-                      widget.config.snapshotOption = value!;
-                      widget.onConfigUpdate();
-                    });
-                  },
-                ),
-
-                // Additional options
-                if (widget.config.snapshotOption !=
-                    SnapshotOption.rebuildAll) ...[
-                  const Divider(height: 32),
-                  const Text(
-                    'New pages:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  
                   const SizedBox(height: 8),
-                  SwitchListTile(
-                    title: const Text('Store content from new pages'),
-                    subtitle: const Text(
-                      'Pages not in the existing snapshot will be included',
+                  
+                  // Option 2: Reuse existing pages and don't store new pages
+                  _buildRadioOption(
+                    value: 1,
+                    title: 'Reuse existing pages and don\'t store new pages',
+                    subtitle: 'For every visited page, the crawler checks whether it is in the Snapshot already. If it is, content is Scanned from the stored page. If if it isn\'t, the page is Scanned from the remote',
+                    theme: theme,
+                  ),
+                  
+                  const SizedBox(height: 8),
+                  
+                  // Option 3: Don't reuse existing pages, update/store all
+                  _buildRadioOption(
+                    value: 2,
+                    title: 'Don\'t reuse existing pages, update/store all encountered pages',
+                    subtitle: 'For every visited page, the crawler checks whether it is in the Snapshot already. If it is, the page is updated. If it isn\'t, the new page is added. This option doesn\'t affect pages that aren\'t visited during the crawl.',
+                    theme: theme,
+                  ),
+                ],
+                
+                // If toggle is off, show the rebuild all explanation
+                if (!_useExistingSnapshot) ...[
+                  const SizedBox(height: 16),
+                  Card(
+                    elevation: 0,
+                    color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    value: widget.config.storeNewPages,
-                    onChanged: (value) {
-                      setState(() {
-                        widget.config.storeNewPages = value;
-                        widget.onConfigUpdate();
-                      });
-                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.refresh,
+                                color: theme.colorScheme.primary,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Rebuild All Pages',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'All pages will be extracted from the source site. This ignores existing snapshot content completely.',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ],
             ),
           ),
         ),
-
-        const SizedBox(height: 24),
-
-        // Snapshot configuration details (Advanced section)
-        ExpansionPanelList(
-          elevation: 0,
-          expandedHeaderPadding: EdgeInsets.zero,
-          expansionCallback: (panelIndex, isExpanded) {
+      ],
+    );
+  }
+  
+  Widget _buildRadioOption({
+    required int value,
+    required String title,
+    required String subtitle,
+    required ThemeData theme,
+  }) {
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 4),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: _selectedHandlingOption == value 
+              ? theme.colorScheme.primary.withOpacity(0.5)
+              : theme.colorScheme.outlineVariant.withOpacity(0.5),
+          width: _selectedHandlingOption == value ? 1.5 : 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(4.0),
+        child: RadioListTile(
+          title: Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: Text(
+              subtitle,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          value: value,
+          groupValue: _selectedHandlingOption,
+          onChanged: (newValue) {
             setState(() {
-              _isAdvancedExpanded = !_isAdvancedExpanded;
+              _selectedHandlingOption = newValue!;
+              
+              if (newValue == 2) {
+                // For the "Don't reuse existing pages" option
+                // Still use existing snapshot toggle but change the behavior
+                widget.config.snapshotOption = SnapshotOption.rebuildAll;
+              } else {
+                // For options 0 and 1, set the proper snapshot option
+                widget.config.snapshotOption = SnapshotOption.useExisting;
+                // And update the storeNewPages flag based on selection
+                widget.config.storeNewPages = newValue == 0;
+              }
+              
+              widget.onConfigUpdate();
             });
           },
-          children: [
-            ExpansionPanel(
-              headerBuilder: (context, isExpanded) {
-                return const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text(
-                    'Snapshot configuration details',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                );
-              },
-              body: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 8.0,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Snapshot name
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Snapshot name',
-                        hintText: 'e.g., March 2025 Production',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Content types to cache
-                    const Text(
-                      'Content types to cache',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Control what types of content are stored in the snapshot',
-                    ),
-
-                    CheckboxListTile(
-                      title: const Text('HTML content'),
-                      value: true,
-                      onChanged: (value) {},
-                    ),
-                    CheckboxListTile(
-                      title: const Text('JavaScript and CSS'),
-                      value: true,
-                      onChanged: (value) {},
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Images'),
-                      value: false,
-                      onChanged: (value) {},
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Content path patterns
-                    const Text(
-                      'Content path patterns',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Define which content should be included in or excluded from the snapshot using URL patterns',
-                    ),
-
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Include content matching',
-                        hintText: 'e.g., /en/*, /blog/*',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Exclude content matching',
-                        hintText: 'e.g., /admin/*, /tmp/*',
-                      ),
-                    ),
-                  ],
+          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          activeColor: theme.colorScheme.primary,
+          selected: _selectedHandlingOption == value,
+          controlAffinity: ListTileControlAffinity.leading,
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildNoSnapshotsWarning(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24.0),
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: theme.colorScheme.primary.withOpacity(0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: theme.colorScheme.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'No snapshots available',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
                 ),
               ),
-              isExpanded: _isAdvancedExpanded,
-              canTapOnHeader: true,
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'You need to create a snapshot first before you can use this feature. Snapshots help track changes to your website content over time.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
             ),
-          ],
-        ),
-      ],
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: () {
+              // Action to open new tab for snapshot creation
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Create New Snapshot'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: theme.colorScheme.primary,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

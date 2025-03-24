@@ -19,9 +19,9 @@ class RecurrenceScreen extends StatefulWidget {
 class _RecurrenceScreenState extends State<RecurrenceScreen> {
   // Sample data for available snapshots
   final List<String> availableSnapshots = [
-    'Latest Crawl (2025-03-22)',
-    'Production Snapshot (2025-03-15)',
-    'Translation Snapshot (2025-03-10)',
+    'Latest Crawl (2023-03-22)',
+    'Production Snapshot (2023-03-15)',
+    'Translation Snapshot (2023-03-10)',
   ];
 
   // Selected snapshots for rotation
@@ -36,77 +36,37 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
     );
   }
 
-  // Calculate next run date based on settings
+  // Calculate next run date based on settings (simplified to not include time)
   String _getNextRunDate() {
     DateTime now = DateTime.now();
     DateTime nextRun;
 
     switch (widget.config.recurrenceFrequency) {
       case RecurrenceFrequency.daily:
-        // Next run today at specified time if it's in the future, otherwise tomorrow
-        TimeOfDay time = widget.config.recurrenceTime;
-        DateTime todayWithTime = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          time.hour,
-          time.minute,
-        );
-        nextRun =
-            todayWithTime.isAfter(now)
-                ? todayWithTime
-                : todayWithTime.add(const Duration(days: 1));
+        // Next run tomorrow if it's after current time
+        nextRun = DateTime(now.year, now.month, now.day + 1);
         break;
 
       case RecurrenceFrequency.weekly:
-        // Next run on the specified day of week at specified time
+        // Next run on the specified day of week
         int currentWeekday = now.weekday; // 1 = Monday, 7 = Sunday
-        int daysUntilTarget =
-            widget.config.recurrenceDayOfWeek - currentWeekday;
-        if (daysUntilTarget < 0) daysUntilTarget += 7;
-
-        TimeOfDay time = widget.config.recurrenceTime;
-        DateTime targetDay = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          time.hour,
-          time.minute,
-        ).add(Duration(days: daysUntilTarget));
-
-        // If it's the same day and time is earlier, add a week
-        if (daysUntilTarget == 0 && targetDay.isBefore(now)) {
-          targetDay = targetDay.add(const Duration(days: 7));
-        }
-
-        nextRun = targetDay;
+        int daysUntilTarget = widget.config.recurrenceDayOfWeek - currentWeekday;
+        if (daysUntilTarget <= 0) daysUntilTarget += 7;
+        nextRun = DateTime(now.year, now.month, now.day).add(Duration(days: daysUntilTarget));
         break;
 
       case RecurrenceFrequency.monthly:
-        // Next run on the specified day of month at specified time
+        // Next run on the specified day of month
         int targetDay = widget.config.recurrenceDayOfMonth;
-        TimeOfDay time = widget.config.recurrenceTime;
-
+        
         // Create date for this month's target day
-        DateTime thisMonthTarget = DateTime(
-          now.year,
-          now.month,
-          targetDay,
-          time.hour,
-          time.minute,
-        );
-
+        DateTime thisMonthTarget = DateTime(now.year, now.month, targetDay);
+        
         // If this month's target is in the past, go to next month
         if (thisMonthTarget.isBefore(now)) {
-          thisMonthTarget = DateTime(
-            now.year,
-            now.month + 1,
-            targetDay,
-            time.hour,
-            time.minute,
-          );
+          thisMonthTarget = DateTime(now.year, now.month + 1, targetDay);
         }
-
+        
         nextRun = thisMonthTarget;
         break;
 
@@ -121,12 +81,8 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
     }
 
     // Format the date nicely
-    String formattedDate =
-        '${nextRun.year}-${nextRun.month.toString().padLeft(2, '0')}-${nextRun.day.toString().padLeft(2, '0')} ';
-    String formattedTime =
-        '${widget.config.recurrenceTime.hour.toString().padLeft(2, '0')}:${widget.config.recurrenceTime.minute.toString().padLeft(2, '0')}:00';
-
-    return '$formattedDate$formattedTime';
+    String formattedDate = '${nextRun.year}-${nextRun.month.toString().padLeft(2, '0')}-${nextRun.day.toString().padLeft(2, '0')}';
+    return formattedDate;
   }
 
   // Day of week names
@@ -145,9 +101,9 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    bool isRecurringEnabled =
-        widget.config.recurrenceFrequency != RecurrenceFrequency.none;
-    String nextRunDate = _getNextRunDate();
+    final theme = Theme.of(context);
+    final bool isRecurringEnabled = widget.config.recurrenceFrequency != RecurrenceFrequency.none;
+    final String nextRunDate = _getNextRunDate();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,242 +111,213 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
         // Title and description
         Text(
           'Set recurring crawl',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.primary,
           ),
         ),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Configure recurring crawls to automatically extract new content at specified intervals.',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 24),
 
         // Crawl frequency card
         Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: theme.colorScheme.outlineVariant,
+            ),
+          ),
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Crawl frequency',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.schedule_rounded,
+                      size: 20,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Crawl frequency',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    InformationTooltip(
+                      message: 'How often should the crawl run automatically?',
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
 
                 // None option
-                RadioListTile<RecurrenceFrequency>(
-                  title: const Text('No recurring crawls'),
-                  subtitle: const Text('Run crawls manually only'),
+                _buildRadioOption(
                   value: RecurrenceFrequency.none,
-                  groupValue: widget.config.recurrenceFrequency,
-                  onChanged: (value) {
-                    setState(() {
-                      widget.config.recurrenceFrequency = value!;
-                      widget.onConfigUpdate();
-                    });
-                  },
+                  title: 'No recurring crawls',
+                  subtitle: 'Run crawls manually only',
+                  theme: theme,
                 ),
+                
+                const SizedBox(height: 8),
 
                 // Daily option
-                RadioListTile<RecurrenceFrequency>(
-                  title: const Text('Daily'),
-                  subtitle: const Text('Run crawl every day at specified time'),
+                _buildRadioOption(
                   value: RecurrenceFrequency.daily,
-                  groupValue: widget.config.recurrenceFrequency,
-                  onChanged: (value) {
-                    setState(() {
-                      widget.config.recurrenceFrequency = value!;
-                      widget.onConfigUpdate();
-                    });
-                  },
+                  title: 'Daily',
+                  subtitle: 'Run crawl every day',
+                  theme: theme,
                 ),
+                
+                const SizedBox(height: 8),
 
                 // Weekly option
-                RadioListTile<RecurrenceFrequency>(
-                  title: const Text('Weekly'),
-                  subtitle: const Text(
-                    'Run crawl once a week on specified day',
-                  ),
+                _buildRadioOption(
                   value: RecurrenceFrequency.weekly,
-                  groupValue: widget.config.recurrenceFrequency,
-                  onChanged: (value) {
-                    setState(() {
-                      widget.config.recurrenceFrequency = value!;
-                      widget.onConfigUpdate();
-                    });
-                  },
+                  title: 'Weekly',
+                  subtitle: 'Run crawl once a week on specified day',
+                  theme: theme,
                 ),
-
-                // Monthly option
-                RadioListTile<RecurrenceFrequency>(
-                  title: const Text('Monthly'),
-                  subtitle: const Text(
-                    'Run crawl once a month on specified day',
-                  ),
-                  value: RecurrenceFrequency.monthly,
-                  groupValue: widget.config.recurrenceFrequency,
-                  onChanged: (value) {
-                    setState(() {
-                      widget.config.recurrenceFrequency = value!;
-                      widget.onConfigUpdate();
-                    });
-                  },
-                ),
-
-                // Custom option
-                RadioListTile<RecurrenceFrequency>(
-                  title: const Text('Custom...'),
-                  subtitle: const Text('Set a custom schedule'),
-                  value: RecurrenceFrequency.custom,
-                  groupValue: widget.config.recurrenceFrequency,
-                  onChanged: (value) {
-                    setState(() {
-                      widget.config.recurrenceFrequency = value!;
-                      widget.onConfigUpdate();
-                    });
-                  },
-                ),
-
-                // Divider before additional options
-                if (isRecurringEnabled) const Divider(height: 32),
-
-                // Additional options based on frequency
-                if (isRecurringEnabled) ...[
-                  // Time picker for all frequencies
-                  InkWell(
-                    onTap: () async {
-                      final TimeOfDay? pickedTime = await showTimePicker(
-                        context: context,
-                        initialTime: widget.config.recurrenceTime,
-                      );
-                      if (pickedTime != null) {
-                        setState(() {
-                          widget.config.recurrenceTime = pickedTime;
-                          widget.onConfigUpdate();
-                        });
-                      }
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.access_time),
-                          const SizedBox(width: 16),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Time of day',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              Text(
-                                '${widget.config.recurrenceTime.hour.toString().padLeft(2, '0')}:${widget.config.recurrenceTime.minute.toString().padLeft(2, '0')}',
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                            ],
+                
+                // Day of week selection for weekly option
+                if (widget.config.recurrenceFrequency == RecurrenceFrequency.weekly)
+                  _buildFrequencyOptionContainer(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Select day of week:',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w500,
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Day selector for weekly
-                  if (widget.config.recurrenceFrequency ==
-                      RecurrenceFrequency.weekly)
-                    DropdownButtonFormField<int>(
-                      decoration: const InputDecoration(
-                        labelText: 'Day of week',
-                        isDense: true,
-                      ),
-                      value: widget.config.recurrenceDayOfWeek,
-                      items: List.generate(7, (index) {
-                        return DropdownMenuItem<int>(
-                          value: index + 1,
-                          child: Text(_daysOfWeek[index]),
-                        );
-                      }),
-                      onChanged: (value) {
-                        setState(() {
-                          widget.config.recurrenceDayOfWeek = value!;
-                          widget.onConfigUpdate();
-                        });
-                      },
-                    ),
-
-                  // Day selector for monthly
-                  if (widget.config.recurrenceFrequency ==
-                      RecurrenceFrequency.monthly)
-                    DropdownButtonFormField<int>(
-                      decoration: const InputDecoration(
-                        labelText: 'Day of month',
-                        isDense: true,
-                      ),
-                      value: widget.config.recurrenceDayOfMonth,
-                      items:
-                          _daysOfMonth.map((day) {
-                            String suffix = '';
-                            if (day == 1 || day == 21 || day == 31) {
-                              suffix = 'st';
-                            } else if (day == 2 || day == 22) {
-                              suffix = 'nd';
-                            } else if (day == 3 || day == 23) {
-                              suffix = 'rd';
-                            } else {
-                              suffix = 'th';
-                            }
-
-                            return DropdownMenuItem<int>(
-                              value: day,
-                              child: Text('$day$suffix'),
-                            );
-                          }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          widget.config.recurrenceDayOfMonth = value!;
-                          widget.onConfigUpdate();
-                        });
-                      },
-                    ),
-
-                  // Custom schedule UI would go here
-                  if (widget.config.recurrenceFrequency ==
-                      RecurrenceFrequency.custom)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16.0),
-                      child: Text(
-                        'Custom scheduling options will be implemented in a future version.',
-                        style: TextStyle(fontStyle: FontStyle.italic),
-                      ),
-                    ),
-                ],
-
-                // Next run indicator
-                if (isRecurringEnabled) ...[
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      const Icon(Icons.schedule),
-                      const SizedBox(width: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Next scheduled run:',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            nextRunDate,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<int>(
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            filled: true,
+                            fillColor: theme.colorScheme.surface,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: theme.colorScheme.outline),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: theme.colorScheme.outline.withOpacity(0.7)),
                             ),
                           ),
-                        ],
+                          icon: Icon(Icons.arrow_drop_down, color: theme.colorScheme.primary),
+                          dropdownColor: theme.colorScheme.surface,
+                          value: widget.config.recurrenceDayOfWeek,
+                          items: List.generate(7, (index) {
+                            return DropdownMenuItem<int>(
+                              value: index + 1,
+                              child: Text(_daysOfWeek[index]),
+                            );
+                          }),
+                          onChanged: (value) {
+                            setState(() {
+                              widget.config.recurrenceDayOfWeek = value!;
+                              widget.onConfigUpdate();
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                
+                const SizedBox(height: 8),
+
+                // Monthly option
+                _buildRadioOption(
+                  value: RecurrenceFrequency.monthly,
+                  title: 'Monthly',
+                  subtitle: 'Run crawl once a month on specified day',
+                  theme: theme,
+                ),
+                
+                // Day of month selection for monthly option
+                if (widget.config.recurrenceFrequency == RecurrenceFrequency.monthly)
+                  _buildFrequencyOptionContainer(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Select day of month:',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<int>(
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            filled: true,
+                            fillColor: theme.colorScheme.surface,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: theme.colorScheme.outline),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: theme.colorScheme.outline.withOpacity(0.7)),
+                            ),
+                          ),
+                          icon: Icon(Icons.arrow_drop_down, color: theme.colorScheme.primary),
+                          dropdownColor: theme.colorScheme.surface,
+                          value: widget.config.recurrenceDayOfMonth,
+                          items: _daysOfMonth.map((day) {
+                            return DropdownMenuItem<int>(
+                              value: day,
+                              child: Text('$day'),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              widget.config.recurrenceDayOfMonth = value!;
+                              widget.onConfigUpdate();
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                if (isRecurringEnabled) ...[
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  
+                  // Next run date
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.event,
+                        size: 20, 
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Next scheduled run: ',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        nextRunDate,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -400,37 +327,59 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
           ),
         ),
 
-        // Rotating snapshots option (only visible for recurring crawls)
+        // Snapshot rotation section
         if (isRecurringEnabled) ...[
           const SizedBox(height: 24),
+          
           Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: theme.colorScheme.outlineVariant,
+              ),
+            ),
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Text(
-                        'Use a different origin (source) snapshot for every crawl',
-                        style: TextStyle(
-                          fontSize: 16,
+                      Icon(
+                        Icons.autorenew_rounded,
+                        size: 20,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Snapshot rotation',
+                        style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(width: 8),
                       InformationTooltip(
-                        message:
-                            'Rotate between snapshots to continuously update content while keeping production stable',
+                        message: 'This will cycle through selected snapshots with each crawl run',
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'This creates a round-robin crawl pattern where content is written to different snapshots in sequence',
-                  ),
-
-                  Switch(
+                  const SizedBox(height: 16),
+                  
+                  // Use rotating snapshots switch
+                  SwitchListTile(
+                    title: Text(
+                      'Enable snapshot rotation',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Automatically cycle through selected snapshots when running recurring crawls',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                     value: widget.config.useRotatingSnapshots,
                     onChanged: (value) {
                       setState(() {
@@ -438,74 +387,44 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
                         widget.onConfigUpdate();
                       });
                     },
+                    contentPadding: EdgeInsets.zero,
                   ),
-
-                  // Snapshot selection (only visible when rotation is enabled)
+                  
+                  // Snapshot selection list
                   if (widget.config.useRotatingSnapshots) ...[
-                    const Divider(),
-                    const Text(
-                      'Select snapshots to rotate between:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Select snapshots to rotate through:',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 8),
-
+                    
                     ...availableSnapshots.map((snapshot) {
-                      bool isSelected = _selectedRotatingSnapshots.contains(
-                        snapshot,
-                      );
+                      final bool isSelected = _selectedRotatingSnapshots.contains(snapshot);
+                      
                       return CheckboxListTile(
                         title: Text(snapshot),
                         value: isSelected,
                         onChanged: (value) {
                           setState(() {
-                            if (value == true) {
-                              _selectedRotatingSnapshots.add(snapshot);
+                            if (value != null && value) {
+                              if (!_selectedRotatingSnapshots.contains(snapshot)) {
+                                _selectedRotatingSnapshots.add(snapshot);
+                              }
                             } else {
                               _selectedRotatingSnapshots.remove(snapshot);
                             }
-                            widget.config.selectedRotatingSnapshots = List.from(
-                              _selectedRotatingSnapshots,
-                            );
+                            
+                            widget.config.selectedRotatingSnapshots = List.from(_selectedRotatingSnapshots);
                             widget.onConfigUpdate();
                           });
                         },
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
                       );
                     }).toList(),
-
-                    if (_selectedRotatingSnapshots.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8.0),
-                        child: Text(
-                          'Please select at least one snapshot for rotation',
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ),
-
-                    if (_selectedRotatingSnapshots.length == 1)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8.0),
-                        child: Text(
-                          'For effective rotation, select at least two snapshots',
-                          style: TextStyle(
-                            color: Colors.orange,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ),
-
-                    if (_selectedRotatingSnapshots.length > 1) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        'Rotation sequence: ${_selectedRotatingSnapshots.join(" → ")} → ${_selectedRotatingSnapshots.first}',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
                   ],
                 ],
               ),
@@ -513,6 +432,71 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
           ),
         ],
       ],
+    );
+  }
+  
+  Widget _buildRadioOption({
+    required RecurrenceFrequency value,
+    required String title,
+    required String subtitle,
+    required ThemeData theme,
+  }) {
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 4),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: widget.config.recurrenceFrequency == value 
+              ? theme.colorScheme.primary.withOpacity(0.5)
+              : theme.colorScheme.outlineVariant.withOpacity(0.5),
+          width: widget.config.recurrenceFrequency == value ? 1.5 : 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(4.0),
+        child: RadioListTile<RecurrenceFrequency>(
+          title: Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          subtitle: Text(
+            subtitle,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          value: value,
+          groupValue: widget.config.recurrenceFrequency,
+          onChanged: (newValue) {
+            setState(() {
+              widget.config.recurrenceFrequency = newValue!;
+              widget.onConfigUpdate();
+            });
+          },
+          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          activeColor: theme.colorScheme.primary,
+          selected: widget.config.recurrenceFrequency == value,
+          controlAffinity: ListTileControlAffinity.leading,
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildFrequencyOptionContainer({required Widget child}) {
+    return Container(
+      margin: const EdgeInsets.only(top: 12, bottom: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+        ),
+      ),
+      child: child,
     );
   }
 }

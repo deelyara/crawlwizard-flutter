@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/crawl_config.dart';
 
-class ReviewScreen extends StatelessWidget {
+class ReviewScreen extends StatefulWidget {
   final CrawlConfig config;
   final VoidCallback onConfigUpdate;
   final Function(int) onEditStep;
@@ -14,21 +14,44 @@ class ReviewScreen extends StatelessWidget {
   });
 
   @override
+  State<ReviewScreen> createState() => _ReviewScreenState();
+}
+
+class _ReviewScreenState extends State<ReviewScreen> {
+  late TextEditingController _noteController;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteController = TextEditingController(text: widget.config.userNote ?? '');
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Title and description
         Text(
           'Review and start crawl',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.primary,
           ),
         ),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Review your configuration settings before starting the crawl.',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 24),
 
@@ -37,7 +60,7 @@ class ReviewScreen extends StatelessWidget {
           context,
           title: 'Crawl type',
           content: _buildTypeContent(context),
-          onEdit: () => onEditStep(0),
+          onEdit: () => widget.onEditStep(0),
         ),
 
         const SizedBox(height: 16),
@@ -47,7 +70,7 @@ class ReviewScreen extends StatelessWidget {
           context,
           title: 'Scope',
           content: _buildScopeContent(context),
-          onEdit: () => onEditStep(1),
+          onEdit: () => widget.onEditStep(1),
         ),
 
         const SizedBox(height: 16),
@@ -57,7 +80,7 @@ class ReviewScreen extends StatelessWidget {
           context,
           title: 'Restrictions',
           content: _buildRestrictionsContent(context),
-          onEdit: () => onEditStep(2),
+          onEdit: () => widget.onEditStep(2),
         ),
 
         const SizedBox(height: 16),
@@ -67,7 +90,7 @@ class ReviewScreen extends StatelessWidget {
           context,
           title: 'Origin Snapshot',
           content: _buildSnapshotContent(context),
-          onEdit: () => onEditStep(3),
+          onEdit: () => widget.onEditStep(3),
         ),
 
         const SizedBox(height: 16),
@@ -77,7 +100,7 @@ class ReviewScreen extends StatelessWidget {
           context,
           title: 'Fine-tune',
           content: _buildFinetuneContent(context),
-          onEdit: () => onEditStep(4),
+          onEdit: () => widget.onEditStep(4),
         ),
 
         const SizedBox(height: 16),
@@ -87,14 +110,75 @@ class ReviewScreen extends StatelessWidget {
           context,
           title: 'Recurrence',
           content: _buildRecurrenceContent(context),
-          onEdit: () => onEditStep(5),
+          onEdit: () => widget.onEditStep(5),
         ),
 
-        const SizedBox(height: 32),
-
-        // Cost projection
+        const SizedBox(height: 24),
+        
+        // Note field for user comments
         Card(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: theme.colorScheme.outlineVariant,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.note_alt_outlined,
+                      color: theme.colorScheme.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Notes',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _noteController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: 'Add any notes about this crawl (optional)',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: theme.colorScheme.surface,
+                  ),
+                  onChanged: (value) {
+                    // Save the note to the config
+                    widget.config.userNote = value;
+                    widget.onConfigUpdate();
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: 24),
+        
+        // Important Note
+        Card(
+          color: theme.colorScheme.primary.withOpacity(0.1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(
+              color: theme.colorScheme.primary.withOpacity(0.3),
+            ),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -103,33 +187,29 @@ class ReviewScreen extends StatelessWidget {
                 Row(
                   children: [
                     Icon(
-                      Icons.euro_symbol,
-                      color: Theme.of(context).colorScheme.primary,
+                      Icons.info_outline,
+                      color: theme.colorScheme.primary,
+                      size: 20,
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Cost projection',
-                      style: TextStyle(
-                        fontSize: 16,
+                      'Important Note',
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: theme.colorScheme.primary,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Estimated cost: €${config.getEstimatedCost().toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+                  'The settings you selected determine what resources are collected during the crawl. To ensure optimal performance and accurate content extraction, these settings have been configured based on your selections.',
+                  style: theme.textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Note: Actual cost may vary based on content found during crawl.',
-                  style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                Text(
+                  'Resources will be collected based on your website structure and the crawl type you\'ve selected.',
+                  style: theme.textTheme.bodyMedium,
                 ),
               ],
             ),
@@ -145,7 +225,16 @@ class ReviewScreen extends StatelessWidget {
     required Widget content,
     required VoidCallback onEdit,
   }) {
+    final theme = Theme.of(context);
+    
     return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant,
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -156,8 +245,7 @@ class ReviewScreen extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -165,12 +253,18 @@ class ReviewScreen extends StatelessWidget {
                   onPressed: onEdit,
                   icon: const Icon(Icons.edit, size: 16),
                   label: const Text('Edit'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: theme.colorScheme.primary,
+                  ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
-          Padding(padding: const EdgeInsets.all(16.0), child: content),
+          Divider(height: 1, color: theme.colorScheme.outlineVariant),
+          Padding(
+            padding: const EdgeInsets.all(16.0), 
+            child: content
+          ),
         ],
       ),
     );
@@ -179,7 +273,7 @@ class ReviewScreen extends StatelessWidget {
   Widget _buildTypeContent(BuildContext context) {
     String crawlTypeText = '';
 
-    switch (config.crawlType) {
+    switch (widget.config.crawlType) {
       case CrawlType.discovery:
         crawlTypeText = 'Discovery crawl';
         break;
@@ -198,7 +292,7 @@ class ReviewScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(crawlTypeText),
-        if (config.prerenderPages) ...[
+        if (widget.config.prerenderPages) ...[
           const SizedBox(height: 8),
           const Text('Prerender pages: Yes'),
         ],
@@ -209,7 +303,7 @@ class ReviewScreen extends StatelessWidget {
   Widget _buildScopeContent(BuildContext context) {
     String scopeText = '';
 
-    switch (config.crawlScope) {
+    switch (widget.config.crawlScope) {
       case CrawlScope.entireSite:
         scopeText = 'Crawl entire website';
         break;
@@ -225,22 +319,22 @@ class ReviewScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(scopeText),
-        if (config.crawlScope == CrawlScope.entireSite) ...[
+        if (widget.config.crawlScope == CrawlScope.entireSite) ...[
           const SizedBox(height: 8),
-          Text('Page limit: ${config.pageLimit}'),
+          Text('Page limit: ${widget.config.pageLimit}'),
         ],
-        if (config.crawlScope == CrawlScope.specificPages &&
-            config.specificUrls.isNotEmpty) ...[
+        if (widget.config.crawlScope == CrawlScope.specificPages &&
+            widget.config.specificUrls.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Text('Number of specific URLs: ${config.specificUrls.length}'),
+          Text('Number of specific URLs: ${widget.config.specificUrls.length}'),
         ],
       ],
     );
   }
 
   Widget _buildRestrictionsContent(BuildContext context) {
-    bool hasIncludes = config.includePrefixes.isNotEmpty;
-    bool hasExcludes = config.excludePrefixes.isNotEmpty;
+    bool hasIncludes = widget.config.includePrefixes.isNotEmpty;
+    bool hasExcludes = widget.config.excludePrefixes.isNotEmpty;
 
     if (!hasIncludes && !hasExcludes) {
       return const Text('No restrictions set.');
@@ -255,7 +349,7 @@ class ReviewScreen extends StatelessWidget {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
-          ...config.includePrefixes.map((prefix) => Text('• $prefix')),
+          ...widget.config.includePrefixes.map((prefix) => Text('• $prefix')),
         ],
         if (hasIncludes && hasExcludes) const SizedBox(height: 8),
         if (hasExcludes) ...[
@@ -264,7 +358,7 @@ class ReviewScreen extends StatelessWidget {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
-          ...config.excludePrefixes.map((prefix) => Text('• $prefix')),
+          ...widget.config.excludePrefixes.map((prefix) => Text('• $prefix')),
         ],
       ],
     );
@@ -273,7 +367,7 @@ class ReviewScreen extends StatelessWidget {
   Widget _buildSnapshotContent(BuildContext context) {
     String snapshotText = '';
 
-    switch (config.snapshotOption) {
+    switch (widget.config.snapshotOption) {
       case SnapshotOption.useExisting:
         snapshotText = 'Use existing snapshot';
         break;
@@ -283,25 +377,28 @@ class ReviewScreen extends StatelessWidget {
       case SnapshotOption.rebuildAll:
         snapshotText = 'Extract content from all pages';
         break;
+      case SnapshotOption.createNew:
+        snapshotText = 'Create new snapshot';
+        break;
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(snapshotText),
-        if (config.snapshotOption != SnapshotOption.rebuildAll) ...[
+        if (widget.config.snapshotOption != SnapshotOption.rebuildAll) ...[
           const SizedBox(height: 8),
           Text(
-            config.storeNewPages
+            widget.config.storeNewPages
                 ? 'New pages will be added to the snapshot'
                 : 'New pages will be ignored',
           ),
         ],
-        if (config.selectedSnapshot.isNotEmpty &&
-            (config.snapshotOption == SnapshotOption.useExisting ||
-                config.snapshotOption == SnapshotOption.compareContent)) ...[
+        if (widget.config.selectedSnapshot.isNotEmpty &&
+            (widget.config.snapshotOption == SnapshotOption.useExisting ||
+                widget.config.snapshotOption == SnapshotOption.compareContent)) ...[
           const SizedBox(height: 8),
-          Text('Selected snapshot: ${config.selectedSnapshot}'),
+          Text('Selected snapshot: ${widget.config.selectedSnapshot}'),
         ],
       ],
     );
@@ -310,18 +407,18 @@ class ReviewScreen extends StatelessWidget {
   Widget _buildFinetuneContent(BuildContext context) {
     List<String> resourcesCollected = [];
 
-    if (config.collectHtmlPages) resourcesCollected.add('HTML pages');
-    if (config.collectJsCssResources)
+    if (widget.config.collectHtmlPages) resourcesCollected.add('HTML pages');
+    if (widget.config.collectJsCssResources)
       resourcesCollected.add('JS/CSS resources');
-    if (config.collectImages) resourcesCollected.add('Images');
-    if (config.collectBinaryResources)
+    if (widget.config.collectImages) resourcesCollected.add('Images');
+    if (widget.config.collectBinaryResources)
       resourcesCollected.add('Binary resources');
-    if (config.collectErrorPages) resourcesCollected.add('Error pages');
-    if (config.collectExternalDomains)
+    if (widget.config.collectErrorPages) resourcesCollected.add('Error pages');
+    if (widget.config.collectExternalDomains)
       resourcesCollected.add('External domain resources');
-    if (config.collectRedirectionPages)
+    if (widget.config.collectRedirectionPages)
       resourcesCollected.add('Redirection pages');
-    if (config.collectShortLinks) resourcesCollected.add('Short links');
+    if (widget.config.collectShortLinks) resourcesCollected.add('Short links');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -352,9 +449,9 @@ class ReviewScreen extends StatelessWidget {
             ),
 
         const SizedBox(height: 8),
-        Text('Simultaneous requests: ${config.simultaneousRequests}'),
+        Text('Simultaneous requests: ${widget.config.simultaneousRequests}'),
 
-        if (config.sessionCookie.isNotEmpty) ...[
+        if (widget.config.sessionCookie.isNotEmpty) ...[
           const SizedBox(height: 8),
           const Text('Session cookie: Set'),
         ],
@@ -363,18 +460,18 @@ class ReviewScreen extends StatelessWidget {
   }
 
   Widget _buildRecurrenceContent(BuildContext context) {
-    if (config.recurrenceFrequency == RecurrenceFrequency.none) {
+    if (widget.config.recurrenceFrequency == RecurrenceFrequency.none) {
       return const Text('No recurring crawls scheduled');
     }
 
     String frequencyText = '';
-    switch (config.recurrenceFrequency) {
+    switch (widget.config.recurrenceFrequency) {
       case RecurrenceFrequency.daily:
         frequencyText = 'Daily';
         break;
       case RecurrenceFrequency.weekly:
         String day = '';
-        switch (config.recurrenceDayOfWeek) {
+        switch (widget.config.recurrenceDayOfWeek) {
           case 1:
             day = 'Monday';
             break;
@@ -403,7 +500,7 @@ class ReviewScreen extends StatelessWidget {
         break;
       case RecurrenceFrequency.monthly:
         String suffix = '';
-        int dayOfMonth = config.recurrenceDayOfMonth;
+        int dayOfMonth = widget.config.recurrenceDayOfMonth;
         if (dayOfMonth == 1 || dayOfMonth == 21 || dayOfMonth == 31) {
           suffix = 'st';
         } else if (dayOfMonth == 2 || dayOfMonth == 22) {
@@ -423,24 +520,20 @@ class ReviewScreen extends StatelessWidget {
         break;
     }
 
-    // Format time
-    String formattedTime =
-        '${config.recurrenceTime.hour.toString().padLeft(2, '0')}:${config.recurrenceTime.minute.toString().padLeft(2, '0')}';
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('$frequencyText at $formattedTime'),
+        Text(frequencyText),
 
-        if (config.useRotatingSnapshots &&
-            config.selectedRotatingSnapshots.isNotEmpty) ...[
+        if (widget.config.useRotatingSnapshots &&
+            widget.config.selectedRotatingSnapshots.isNotEmpty) ...[
           const SizedBox(height: 8),
           const Text(
             'Rotating snapshots:',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
-          ...config.selectedRotatingSnapshots.map(
+          ...widget.config.selectedRotatingSnapshots.map(
             (snapshot) => Text('• $snapshot'),
           ),
         ],
