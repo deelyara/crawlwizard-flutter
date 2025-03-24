@@ -20,36 +20,41 @@ class ModernStepIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
+    final backgroundColor = theme.colorScheme.background;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24.0),
-      child: ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 32.0, horizontal: 16.0),
+      child: ListView.separated(
         itemCount: totalSteps,
         shrinkWrap: true,
+        separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final bool isActive = index == currentStep;
           final bool isPast = index < currentStep;
           final bool canNavigate = isPast || index == currentStep;
 
-          return Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: 4.0,
-              horizontal: 16.0,
-            ),
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
             child: Material(
               color: Colors.transparent,
               child: InkWell(
                 onTap: canNavigate ? () => onStepTap(index) : null,
                 borderRadius: BorderRadius.circular(12),
-                child: Container(
+                hoverColor: primaryColor.withOpacity(0.05),
+                splashColor: primaryColor.withOpacity(0.1),
+                highlightColor: primaryColor.withOpacity(0.05),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
                   padding: const EdgeInsets.symmetric(
-                    vertical: 12.0,
+                    vertical: 16.0,
                     horizontal: 16.0,
                   ),
                   decoration: BoxDecoration(
                     color:
                         isActive
-                            ? primaryColor.withOpacity(0.1)
+                            ? primaryColor.withOpacity(0.08)
                             : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                     border:
@@ -60,25 +65,37 @@ class ModernStepIndicator extends StatelessWidget {
                   child: Row(
                     children: [
                       // Step number with icon
-                      Container(
-                        width: 36,
-                        height: 36,
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color:
                               isActive
                                   ? primaryColor
                                   : isPast
-                                  ? primaryColor.withOpacity(0.7)
-                                  : theme.colorScheme.surfaceVariant,
+                                  ? primaryColor.withOpacity(0.8)
+                                  : theme.colorScheme.surfaceVariant
+                                      .withOpacity(0.7),
+                          boxShadow:
+                              isActive || isPast
+                                  ? [
+                                    BoxShadow(
+                                      color: primaryColor.withOpacity(0.2),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                  : null,
                         ),
                         child: Center(
                           child:
                               isPast
                                   ? Icon(
-                                    Icons.check,
+                                    Icons.check_rounded,
                                     color: Colors.white,
-                                    size: 18,
+                                    size: 22,
                                   )
                                   : Icon(
                                     stepIcons[index],
@@ -88,7 +105,7 @@ class ModernStepIndicator extends StatelessWidget {
                                             : theme
                                                 .colorScheme
                                                 .onSurfaceVariant,
-                                    size: 18,
+                                    size: 20,
                                   ),
                         ),
                       ),
@@ -102,24 +119,27 @@ class ModernStepIndicator extends StatelessWidget {
                             Text(
                               'Step ${index + 1}',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w500,
                                 color:
                                     isActive
                                         ? primaryColor
+                                        : isPast
+                                        ? theme.colorScheme.onSurface
+                                            .withOpacity(0.8)
                                         : theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 4),
                             // Step title
                             Text(
                               stepTitles[index],
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 16,
                                 fontWeight:
                                     isActive
                                         ? FontWeight.bold
-                                        : FontWeight.normal,
+                                        : FontWeight.w500,
                                 color:
                                     isActive
                                         ? theme.colorScheme.primary

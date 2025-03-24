@@ -122,10 +122,10 @@ class _WizardModalState extends State<WizardModal> {
           child: Scaffold(
             appBar: AppBar(
               title: Text(
-                stepTitles[currentStep],
+                'Crawl Wizard',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 18,
+                  fontSize: 20,
                 ),
               ),
               centerTitle: false,
@@ -137,73 +137,111 @@ class _WizardModalState extends State<WizardModal> {
               ],
               elevation: 0,
             ),
-            body: Row(
+            body: Column(
               children: [
-                // Left sidebar with step indicator
+                // Title bar for current step
                 Container(
-                  width: 240,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 5,
-                        offset: const Offset(1, 0),
-                      ),
-                    ],
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
                   ),
-                  child: ModernStepIndicator(
-                    currentStep: currentStep,
-                    totalSteps: totalSteps,
-                    stepTitles: stepTitles,
-                    stepIcons: stepIcons,
-                    onStepTap: goToStep,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  child: Text(
+                    stepTitles[currentStep],
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                // Main content area
                 Expanded(
-                  child: Column(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24.0),
-                            child: getStepContent(),
+                      // Left sidebar with step indicator
+                      Container(
+                        width: 280,
+                        height: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 5,
+                              offset: const Offset(1, 0),
+                            ),
+                          ],
+                          border: Border(
+                            right: BorderSide(
+                              color:
+                                  Theme.of(context).colorScheme.outlineVariant,
+                              width: 1,
+                            ),
                           ),
                         ),
+                        child: ModernStepIndicator(
+                          currentStep: currentStep,
+                          totalSteps: totalSteps,
+                          stepTitles: stepTitles,
+                          stepIcons: stepIcons,
+                          onStepTap: goToStep,
+                        ),
                       ),
-                      const Divider(height: 1),
-                      WizardNavigation(
-                        currentStep: currentStep,
-                        totalSteps: totalSteps,
-                        onNext: goToNextStep,
-                        onBack: goToPreviousStep,
-                        isLastStep: currentStep == totalSteps - 1,
-                        onComplete: () {
-                          // Handle crawl start
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: const Text('Crawl Initiated'),
-                                content: const Text(
-                                  'Your crawl has been initiated. We will notify you when it is complete.',
+                      // Main content area
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: SingleChildScrollView(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24.0),
+                                  child: getStepContent(),
                                 ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                      Navigator.of(
-                                        context,
-                                      ).pop(); // Close the wizard too
-                                    },
-                                    child: const Text('OK'),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        },
+                              ),
+                            ),
+                            const Divider(height: 1),
+                            WizardNavigation(
+                              currentStep: currentStep,
+                              totalSteps: totalSteps,
+                              onNext: goToNextStep,
+                              onBack: goToPreviousStep,
+                              isLastStep: currentStep == totalSteps - 1,
+                              onComplete: () {
+                                // Handle crawl start
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: const Text('Crawl Started'),
+                                      content: const Text(
+                                        'Your crawl has been started. We\'ll let you know when it\'s done.',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                            Navigator.of(
+                                              context,
+                                            ).pop(); // Close the wizard too
+                                          },
+                                          child: const Text('OK'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),

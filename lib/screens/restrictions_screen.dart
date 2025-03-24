@@ -71,21 +71,20 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
         Row(
           children: [
             Text(
-              'Set URL Restrictions',
+              'Set URL Filters',
               style: Theme.of(
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
             const InformationTooltip(
-              message:
-                  'Define which URLs should be included or excluded from the crawl.',
+              message: 'Include or exclude specific parts of the website.',
             ),
           ],
         ),
         const SizedBox(height: 8),
         Text(
-          'Restrict the crawl to only include certain URL patterns and exclude others.',
+          'Focus your crawl on just the website sections you need.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -94,14 +93,14 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
 
         // Include prefixes section
         Text(
-          'Include Rules',
+          'Include These Sections',
           style: Theme.of(
             context,
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(
-          'Only crawl URLs matching these prefixes:',
+          'Only crawl URLs that contain:',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 12),
@@ -126,7 +125,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                       child: TextField(
                         controller: _includeController,
                         decoration: InputDecoration(
-                          hintText: 'e.g., /blog/, /products/',
+                          hintText: 'Example: /blog or /products',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -147,7 +146,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                 if (widget.config.includePrefixes.isEmpty) ...[
                   const SizedBox(height: 16),
                   Text(
-                    'No include rules added. If left empty, all URLs will be crawled.',
+                    'No filters added. The entire site will be crawled.',
                     style: TextStyle(
                       fontStyle: FontStyle.italic,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -182,14 +181,14 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
 
         // Exclude prefixes section
         Text(
-          'Exclude Rules',
+          'Skip These Sections',
           style: Theme.of(
             context,
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(
-          'Skip URLs matching these prefixes:',
+          'Don\'t crawl URLs that contain:',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 12),
@@ -214,7 +213,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                       child: TextField(
                         controller: _excludeController,
                         decoration: InputDecoration(
-                          hintText: 'e.g., /admin/, /tmp/',
+                          hintText: 'Example: /admin or /tmp',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -235,7 +234,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                 if (widget.config.excludePrefixes.isEmpty) ...[
                   const SizedBox(height: 16),
                   Text(
-                    'No exclude rules added. If left empty, no URLs will be excluded.',
+                    'No exclusions added. Nothing will be skipped.',
                     style: TextStyle(
                       fontStyle: FontStyle.italic,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -270,8 +269,8 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
 
         // Make permanent option
         SwitchListTile(
-          title: const Text('Make Restrictions Permanent'),
-          subtitle: const Text('Apply these restrictions to all future crawls'),
+          title: const Text('Save these filters for future crawls'),
+          subtitle: const Text('Apply the same settings to all your crawls'),
           value: widget.config.makePermanent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

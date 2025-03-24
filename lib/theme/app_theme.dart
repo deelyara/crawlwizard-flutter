@@ -32,6 +32,7 @@ class AppTheme {
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        elevation: 0,
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
@@ -51,6 +52,7 @@ class AppTheme {
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide(color: primaryColor, width: 2),
       ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     ),
     checkboxTheme: CheckboxThemeData(
       fillColor: MaterialStateProperty.resolveWith<Color>((states) {
@@ -59,6 +61,7 @@ class AppTheme {
         }
         return Colors.transparent;
       }),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
     ),
     radioTheme: RadioThemeData(
       fillColor: MaterialStateProperty.resolveWith<Color>((states) {
@@ -73,20 +76,26 @@ class AppTheme {
         if (states.contains(MaterialState.selected)) {
           return primaryColor;
         }
-        return Colors.grey;
+        return Colors.white;
       }),
       trackColor: MaterialStateProperty.resolveWith<Color>((states) {
         if (states.contains(MaterialState.selected)) {
-          return primaryColor.withOpacity(0.5);
+          return primaryColor.withOpacity(0.4);
         }
-        return Colors.grey.withOpacity(0.5);
+        return Colors.grey.withOpacity(0.3);
       }),
+      trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    ),
+    listTileTheme: ListTileThemeData(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     ),
     dividerTheme: const DividerThemeData(space: 24, thickness: 1),
     chipTheme: ChipThemeData(
       backgroundColor: colorScheme.surfaceVariant,
       labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
       side: BorderSide.none,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     ),
     tabBarTheme: TabBarTheme(
       labelColor: primaryColor,
@@ -99,6 +108,15 @@ class AppTheme {
       textColor: primaryColor,
       iconColor: primaryColor,
       childrenPadding: const EdgeInsets.symmetric(horizontal: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    ),
+    sliderTheme: SliderThemeData(
+      activeTrackColor: primaryColor,
+      inactiveTrackColor: colorScheme.surfaceVariant,
+      thumbColor: primaryColor,
+      overlayColor: primaryColor.withOpacity(0.2),
+      valueIndicatorColor: primaryColor,
+      valueIndicatorTextStyle: const TextStyle(color: Colors.white),
     ),
   );
 }

@@ -22,20 +22,20 @@ class ScopeScreen extends StatelessWidget {
         Row(
           children: [
             Text(
-              'Set Crawl Scope',
+              'Choose What to Crawl',
               style: Theme.of(
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
             const InformationTooltip(
-              message: 'Define the boundaries of your crawl.',
+              message: 'Select which parts of the website to include.',
             ),
           ],
         ),
         const SizedBox(height: 8),
         Text(
-          'Choose which parts of the website will be included in the crawl.',
+          'How much of the website do you want to crawl?',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -45,8 +45,8 @@ class ScopeScreen extends StatelessWidget {
         // Scope options
         SimpleOptionCard(
           isSelected: config.crawlScope == CrawlScope.entireSite,
-          title: 'Entire Site',
-          subtitle: 'Crawl the entire website, finding new pages as it goes',
+          title: 'Entire Website',
+          subtitle: 'Crawl everything and discover new pages',
           icon: Icons.public_outlined,
           onTap: () {
             config.crawlScope = CrawlScope.entireSite;
@@ -57,8 +57,8 @@ class ScopeScreen extends StatelessWidget {
 
         SimpleOptionCard(
           isSelected: config.crawlScope == CrawlScope.currentPages,
-          title: 'Current Pages Only',
-          subtitle: 'Only crawl pages that are already in the page list',
+          title: 'Existing Pages Only',
+          subtitle: 'Only crawl pages already in your project',
           icon: Icons.bookmark_border_outlined,
           onTap: () {
             config.crawlScope = CrawlScope.currentPages;
@@ -69,8 +69,8 @@ class ScopeScreen extends StatelessWidget {
 
         SimpleOptionCard(
           isSelected: config.crawlScope == CrawlScope.specificPages,
-          title: 'Specific Pages Only',
-          subtitle: 'Only crawl a custom list of URLs you provide',
+          title: 'Custom Pages',
+          subtitle: 'Specify exactly which pages to crawl',
           icon: Icons.list_alt_outlined,
           onTap: () {
             config.crawlScope = CrawlScope.specificPages;
@@ -82,14 +82,14 @@ class ScopeScreen extends StatelessWidget {
         if (config.crawlScope == CrawlScope.entireSite) ...[
           const SizedBox(height: 24),
           Text(
-            'Page Limit',
+            'How many pages?',
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
-            'Set the maximum number of pages to crawl.',
+            'Limit the number of pages to keep costs under control.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),

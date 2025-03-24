@@ -36,52 +36,37 @@ class WizardNavigation extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Progress info
-          Text(
-            'Step ${currentStep + 1} of $totalSteps',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-
-          // Buttons
-          Row(
-            children: [
-              // Back button
-              if (currentStep > 0)
-                OutlinedButton.icon(
-                  onPressed: onBack,
-                  icon: const Icon(Icons.arrow_back),
-                  label: const Text('Back'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+          // Back button
+          if (currentStep > 0)
+            OutlinedButton.icon(
+              onPressed: onBack,
+              icon: const Icon(Icons.arrow_back),
+              label: const Text('Back'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
                 ),
-              if (currentStep > 0) const SizedBox(width: 12),
-
-              // Next/Complete button
-              ElevatedButton.icon(
-                onPressed: isLastStep ? onComplete : onNext,
-                icon: Icon(isLastStep ? Icons.play_arrow : Icons.arrow_forward),
-                label: Text(isLastStep ? 'Start Crawl' : 'Next'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-            ],
+            )
+          else
+            // Placeholder to keep layout consistent when no back button
+            const SizedBox(width: 100),
+
+          // Next/Complete button
+          ElevatedButton.icon(
+            onPressed: isLastStep ? onComplete : onNext,
+            icon: Icon(isLastStep ? Icons.play_arrow : Icons.arrow_forward),
+            label: Text(isLastStep ? 'Start Crawl' : 'Continue'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
           ),
         ],
       ),

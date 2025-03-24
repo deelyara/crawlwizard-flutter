@@ -30,13 +30,13 @@ class TypeScreen extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             const InformationTooltip(
-              message: 'Choose the type of crawl that best fits your needs.',
+              message: 'Choose how you want to crawl the website.',
             ),
           ],
         ),
         const SizedBox(height: 8),
         Text(
-          'The type of crawl determines what content is collected and how it is processed.',
+          'What do you want to do with the website content?',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -47,7 +47,7 @@ class TypeScreen extends StatelessWidget {
         SimpleOptionCard(
           isSelected: config.crawlType == CrawlType.discovery,
           title: 'Discovery',
-          subtitle: 'Maps the structure of the site without storing content',
+          subtitle: 'Just map the site structure without saving content',
           icon: Icons.explore_outlined,
           onTap: () {
             config.crawlType = CrawlType.discovery;
@@ -59,7 +59,7 @@ class TypeScreen extends StatelessWidget {
         SimpleOptionCard(
           isSelected: config.crawlType == CrawlType.contentExtraction,
           title: 'Content Extraction',
-          subtitle: 'Extracts and stores source content from pages',
+          subtitle: 'Save all the content from the pages',
           icon: Icons.download_outlined,
           onTap: () {
             config.crawlType = CrawlType.contentExtraction;
@@ -71,7 +71,7 @@ class TypeScreen extends StatelessWidget {
         SimpleOptionCard(
           isSelected: config.crawlType == CrawlType.newContentDetection,
           title: 'New Content Detection',
-          subtitle: 'Analyzes pages for new content based on existing entries',
+          subtitle: 'Find only new or changed content since last crawl',
           icon: Icons.find_in_page_outlined,
           onTap: () {
             config.crawlType = CrawlType.newContentDetection;
@@ -82,8 +82,8 @@ class TypeScreen extends StatelessWidget {
 
         SimpleOptionCard(
           isSelected: config.crawlType == CrawlType.tlsContentExtraction,
-          title: 'TLS Content Extraction',
-          subtitle: 'For sites with varying content by target languages',
+          title: 'Language-specific Content',
+          subtitle: 'For websites with different content per language',
           icon: Icons.language_outlined,
           onTap: () {
             config.crawlType = CrawlType.tlsContentExtraction;
