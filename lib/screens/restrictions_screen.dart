@@ -1,5 +1,6 @@
 // File: lib/screens/restrictions_screen.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/crawl_config.dart';
 import '../widgets/information_tooltip.dart';
 
@@ -18,280 +19,670 @@ class RestrictionsScreen extends StatefulWidget {
 }
 
 class _RestrictionsScreenState extends State<RestrictionsScreen> {
-  final _includeController = TextEditingController();
-  final _excludeController = TextEditingController();
+  // Current state for the restriction type (include or exclude)
+  bool _isExcludeMode = true;
+  
+  // Controller for the new restriction input field
+  final _restrictionController = TextEditingController();
+  
+  // Toggle for making temporary restrictions permanent
+  bool _makePermanent = false;
+  
+  // Sample existing project restrictions (in a real app, these would come from a backend)
+  final List<String> _existingIncludePrefixes = ['/blog', '/news', '/asdf', '/aaaaa', '/bbbbb'];
+  final List<String> _existingExcludePrefixes = ['/about', '/qwertz', '/ccc', '/ddd', '/eee'];
+  
+  // Temporary restrictions for this crawl
+  List<String> _tempIncludePrefixes = [];
+  List<String> _tempExcludePrefixes = [];
+  
+  // Set of disabled existing restrictions (won't be applied to this crawl)
+  final Set<String> _disabledExistingPrefixes = {};
+  
+  // Regular expression restrictions
+  final List<String> _regexRestrictions = [];
+  final _regexController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // In a real app, load the config's include and exclude prefixes here
+    _tempIncludePrefixes = ['/blog', '/news'];
+    _tempExcludePrefixes = ['/about', '/contact'];
+  }
 
   @override
   void dispose() {
-    _includeController.dispose();
-    _excludeController.dispose();
+    _restrictionController.dispose();
+    _regexController.dispose();
     super.dispose();
   }
 
-  void _addIncludePrefix() {
-    if (_includeController.text.isNotEmpty) {
-      setState(() {
-        widget.config.includePrefixes.add(_includeController.text);
-        _includeController.clear();
-      });
-      widget.onConfigUpdate();
+  // Validate and format the path prefix
+  String? _validatePrefix(String value) {
+    if (value.isEmpty) {
+      return null;
     }
+    
+    if (!value.startsWith('/')) {
+      return "Invalid prefix. Must start with '/'";
+    }
+    
+    if (value.trim() == '/') {
+      return "Single slash not allowed. Please enter a more specific path.";
+    }
+    
+    // Extract path component if full URL is entered
+    if (value.startsWith('http')) {
+      try {
+        final uri = Uri.parse(value);
+        value = uri.path;
+      } catch (e) {
+        return "Invalid URL format.";
+      }
+    }
+    
+    // Convert double slashes to single slash
+    value = value.replaceAll('//', '/');
+    
+    return null;
   }
 
-  void _addExcludePrefix() {
-    if (_excludeController.text.isNotEmpty) {
-      setState(() {
-        widget.config.excludePrefixes.add(_excludeController.text);
-        _excludeController.clear();
-      });
-      widget.onConfigUpdate();
+  // Add a new restriction based on the current mode
+  void _addRestriction() {
+    final value = _restrictionController.text.trim();
+    if (value.isEmpty) return;
+    
+    final error = _validatePrefix(value);
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)),
+      );
+      return;
     }
-  }
-
-  void _removeIncludePrefix(int index) {
+    
     setState(() {
-      widget.config.includePrefixes.removeAt(index);
+      // Handle comma-separated values
+      final prefixes = value.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      
+      if (_isExcludeMode) {
+        _tempExcludePrefixes.addAll(prefixes);
+      } else {
+        _tempIncludePrefixes.addAll(prefixes);
+      }
+      
+      _restrictionController.clear();
+    });
+    
+    // Update the config
+    widget.onConfigUpdate();
+  }
+  
+  // Remove a temporary restriction
+  void _removeTemporaryRestriction(String prefix, bool isExclude) {
+    setState(() {
+      if (isExclude) {
+        _tempExcludePrefixes.remove(prefix);
+      } else {
+        _tempIncludePrefixes.remove(prefix);
+      }
+    });
+    widget.onConfigUpdate();
+  }
+  
+  // Toggle an existing restriction (enable/disable)
+  void _toggleExistingRestriction(String prefix) {
+    setState(() {
+      if (_disabledExistingPrefixes.contains(prefix)) {
+        _disabledExistingPrefixes.remove(prefix);
+      } else {
+        _disabledExistingPrefixes.add(prefix);
+      }
+    });
+    widget.onConfigUpdate();
+  }
+  
+  // Add a regex restriction
+  void _addRegexRestriction() {
+    final value = _regexController.text.trim();
+    if (value.isEmpty) return;
+    
+    setState(() {
+      _regexRestrictions.add(value);
+      _regexController.clear();
+    });
+    
+    widget.onConfigUpdate();
+  }
+  
+  // Remove a regex restriction
+  void _removeRegexRestriction(int index) {
+    setState(() {
+      _regexRestrictions.removeAt(index);
     });
     widget.onConfigUpdate();
   }
 
-  void _removeExcludePrefix(int index) {
-    setState(() {
-      widget.config.excludePrefixes.removeAt(index);
-    });
-    widget.onConfigUpdate();
+  // Build a restriction chip with asterisk suffix
+  Widget _buildRestrictionChip({
+    required String prefix,
+    required bool isTemporary,
+    required bool isExclude,
+    required bool isDisabled,
+    required VoidCallback onRemove,
+  }) {
+    // Display with asterisk suffix for UI purposes
+    final displayText = '$prefix*';
+    final primaryColor = const Color(0xFF37618E);
+    final chipTextColor = const Color(0xFF191C20);
+    final chipColor = const Color(0xFFCBDCF6);
+    
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: Builder(
+        builder: (context) {
+          bool isHovering = false;
+          
+          return StatefulBuilder(
+            builder: (context, setState) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 8.0, bottom: 8.0),
+                child: GestureDetector(
+                  onTap: isTemporary && isHovering 
+                      ? onRemove 
+                      : (isTemporary ? null : () => _toggleExistingRestriction(prefix)),
+                  child: MouseRegion(
+                    onEnter: (_) => setState(() => isHovering = true),
+                    onExit: (_) => setState(() => isHovering = false),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isDisabled ? Colors.grey.shade200 : chipColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isTemporary && isHovering)
+                            Icon(
+                              Icons.delete_outline,
+                              size: 16,
+                              color: Colors.red.shade700,
+                            )
+                          else
+                            Icon(
+                              Icons.check,
+                              size: 16,
+                              color: isDisabled 
+                                ? Colors.grey.shade600 
+                                : chipTextColor,
+                            ),
+                          const SizedBox(width: 6),
+                          Text(
+                            displayText,
+                            style: TextStyle(
+                              color: isDisabled ? Colors.grey.shade600 : chipTextColor,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }
+          );
+        }
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = const Color(0xFF37618E);
+    final headerStyle = GoogleFonts.roboto(
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+      color: Colors.black87,
+    );
+    
+    // Consistent container width
+    final containerWidth = MediaQuery.of(context).size.width - 48; // Accounting for padding
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title with tooltip
-        Row(
-          children: [
-            Text(
-              'Set URL Filters',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(width: 8),
-            const InformationTooltip(
-              message: 'Include or exclude specific parts of the website.',
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
         Text(
-          'Focus your crawl on specific website sections and avoid unnecessary content.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          'Manage restrictions for this crawl',
+          style: GoogleFonts.roboto(
+            fontSize: 24,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
           ),
         ),
-        const SizedBox(height: 24),
-
-        // Include prefixes section
-        Text(
-          'Include These Sections',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'The crawler will only process URLs containing these paths:',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 12),
-
-        // Include prefixes card
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: Theme.of(context).colorScheme.outlineVariant,
+        const SizedBox(height: 32),
+        
+        // Existing project restrictions section (if present)
+        if (_existingIncludePrefixes.isNotEmpty || _existingExcludePrefixes.isNotEmpty) ...[
+          // Container for existing restrictions with title inside
+          Container(
+            width: containerWidth,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade300),
             ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Input field
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _includeController,
-                        decoration: InputDecoration(
-                          hintText: 'Example: /blog or /products',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          isDense: true,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    ElevatedButton.icon(
-                      onPressed: _addIncludePrefix,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add'),
-                    ),
-                  ],
+                Text(
+                  'Existing project restrictions',
+                  style: headerStyle,
                 ),
-
-                // List of include rules as chips
-                if (widget.config.includePrefixes.isEmpty) ...[
-                  const SizedBox(height: 16),
+                const SizedBox(height: 8),
+                Text(
+                  'Click on a restriction to disable it for this crawl. Disabled restrictions will not be applied.',
+                  style: GoogleFonts.roboto(
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Crawl pages starting with section
+                if (_existingIncludePrefixes.isNotEmpty) ...[
                   Text(
-                    'No filters added. The entire site will be crawled.',
-                    style: TextStyle(
-                      fontStyle: FontStyle.italic,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    'Crawl pages starting with:',
+                    style: GoogleFonts.roboto(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
                     ),
                   ),
-                ] else ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: List.generate(
-                      widget.config.includePrefixes.length,
-                      (index) => Chip(
-                        label: Text(widget.config.includePrefixes[index]),
-                        deleteIcon: const Icon(Icons.cancel, size: 18),
-                        onDeleted: () => _removeIncludePrefix(index),
-                        backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                        side: BorderSide(color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
-                        labelStyle: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        deleteIconColor: Theme.of(context).colorScheme.primary,
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                      ),
+                    children: _existingIncludePrefixes.map((prefix) {
+                      final isDisabled = _disabledExistingPrefixes.contains(prefix);
+                      return _buildRestrictionChip(
+                        prefix: prefix,
+                        isTemporary: false,
+                        isExclude: false,
+                        isDisabled: isDisabled,
+                        onRemove: () {}, // Not applicable for existing
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                
+                // Don't crawl pages starting with section
+                if (_existingExcludePrefixes.isNotEmpty) ...[
+                  Text(
+                    "Don't crawl pages starting with:",
+                    style: GoogleFonts.roboto(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    children: _existingExcludePrefixes.map((prefix) {
+                      final isDisabled = _disabledExistingPrefixes.contains(prefix);
+                      return _buildRestrictionChip(
+                        prefix: prefix,
+                        isTemporary: false,
+                        isExclude: true,
+                        isDisabled: isDisabled,
+                        onRemove: () {}, // Not applicable for existing
+                      );
+                    }).toList(),
                   ),
                 ],
               ],
             ),
           ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // Exclude prefixes section
-        Text(
-          'Skip These Sections',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'The crawler will ignore URLs containing these paths:',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 12),
-
-        // Exclude prefixes card
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: Theme.of(context).colorScheme.outlineVariant,
-            ),
+          const SizedBox(height: 32),
+        ],
+        
+        // Combined container for add temporary restrictions and temporary restrictions display
+        Container(
+          width: containerWidth,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade300),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Input field
-                Row(
-                  children: [
-                    Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Add temporary restrictions section
+              Text(
+                _makePermanent ? 'Add new project restrictions' : 'Add temporary restrictions for this crawl',
+                style: headerStyle,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Path prefixes control which pages to include or exclude.",
+                style: GoogleFonts.roboto(
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Radio buttons for include/exclude mode
+              Row(
+                children: [
+                  Radio<bool>(
+                    value: false,
+                    groupValue: _isExcludeMode,
+                    onChanged: (value) {
+                      setState(() {
+                        _isExcludeMode = value!;
+                      });
+                    },
+                    activeColor: primaryColor,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  const Text('Crawl pages starting with'),
+                  const SizedBox(width: 24),
+                  Radio<bool>(
+                    value: true,
+                    groupValue: _isExcludeMode,
+                    onChanged: (value) {
+                      setState(() {
+                        _isExcludeMode = value!;
+                      });
+                    },
+                    activeColor: primaryColor,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  const Text("Don't crawl pages starting with"),
+                ],
+              ),
+              const SizedBox(height: 16),
+              
+              // Restriction input field with validation
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 40,
                       child: TextField(
-                        controller: _excludeController,
+                        controller: _restrictionController,
                         decoration: InputDecoration(
-                          hintText: 'Example: /admin or /tmp',
+                          hintText: 'Path prefix rule, e.g., /blog, /news/, /fr/',
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(4),
                           ),
-                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                         ),
+                        onSubmitted: (_) => _addRestriction(),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    ElevatedButton.icon(
-                      onPressed: _addExcludePrefix,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add'),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: _addRestriction,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                     ),
-                  ],
-                ),
-
-                // List of exclude rules as chips
-                if (widget.config.excludePrefixes.isEmpty) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    'No exclusions added. Nothing will be skipped.',
-                    style: TextStyle(
-                      fontStyle: FontStyle.italic,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    child: const Text('Add'),
+                  ),
+                ],
+              ),
+              
+              // Switch to make temporary restrictions permanent - made smaller with custom constraints
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  SizedBox(
+                    height: 24, // Smaller height
+                    width: 40, // Smaller width
+                    child: Transform.scale(
+                      scale: 0.8, // Scale down the switch
+                      child: Switch(
+                        value: _makePermanent,
+                        onChanged: (value) {
+                          setState(() {
+                            _makePermanent = value;
+                          });
+                        },
+                        activeColor: primaryColor,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                     ),
                   ),
-                ] else ...[
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: List.generate(
-                      widget.config.excludePrefixes.length,
-                      (index) => Chip(
-                        label: Text(widget.config.excludePrefixes[index]),
-                        deleteIcon: const Icon(Icons.cancel, size: 18),
-                        onDeleted: () => _removeExcludePrefix(index),
-                        backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.1),
-                        side: BorderSide(color: Theme.of(context).colorScheme.error.withOpacity(0.3)),
-                        labelStyle: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        deleteIconColor: Theme.of(context).colorScheme.error,
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Add these temporary restrictions to the project settings permanently',
+                      style: GoogleFonts.roboto(
+                        fontSize: 14,
+                        color: Colors.black87,
                       ),
                     ),
                   ),
                 ],
+              ),
+              
+              // Temporary restrictions section (only show if there are temporary restrictions)
+              if (_tempIncludePrefixes.isNotEmpty || _tempExcludePrefixes.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                const Divider(height: 1),
+                const SizedBox(height: 24),
+                
+                Text(
+                  _makePermanent ? 'New project restrictions' : 'Temporary crawl restrictions',
+                  style: headerStyle,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _makePermanent 
+                      ? 'These restrictions will be added to your project settings permanently' 
+                      : 'These restrictions will only apply to this crawl session',
+                  style: GoogleFonts.roboto(
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Temporary crawl pages starting with
+                if (_tempIncludePrefixes.isNotEmpty) ...[
+                  Text(
+                    'Crawl pages starting with:',
+                    style: GoogleFonts.roboto(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    children: _tempIncludePrefixes.map((prefix) {
+                      return _buildRestrictionChip(
+                        prefix: prefix,
+                        isTemporary: true,
+                        isExclude: false,
+                        isDisabled: false,
+                        onRemove: () => _removeTemporaryRestriction(prefix, false),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                
+                // Temporary don't crawl pages starting with
+                if (_tempExcludePrefixes.isNotEmpty) ...[
+                  Text(
+                    "Don't crawl pages starting with:",
+                    style: GoogleFonts.roboto(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    children: _tempExcludePrefixes.map((prefix) {
+                      return _buildRestrictionChip(
+                        prefix: prefix,
+                        isTemporary: true,
+                        isExclude: true,
+                        isDisabled: false,
+                        onRemove: () => _removeTemporaryRestriction(prefix, true),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ],
-            ),
+            ],
           ),
         ),
-
-        const SizedBox(height: 24),
-
-        // Make permanent option
-        SwitchListTile(
-          title: const Text('Save these filters for future crawls'),
-          subtitle: const Text('Apply the same settings to all your crawls'),
-          value: widget.config.makePermanent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: Theme.of(context).colorScheme.outlineVariant,
-            ),
+        
+        // Regular expression restrictions section
+        const SizedBox(height: 32),
+        
+        // Container for regex with title inside
+        Container(
+          width: containerWidth,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade300),
           ),
-          onChanged: (value) {
-            setState(() {
-              widget.config.makePermanent = value;
-            });
-            widget.onConfigUpdate();
-          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Add regular expression restrictions',
+                style: headerStyle,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Exclude the pages matching the following regular expression during this crawl',
+                style: GoogleFonts.roboto(
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Regex input field
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 40,
+                      child: TextField(
+                        controller: _regexController,
+                        decoration: InputDecoration(
+                          hintText: 'e.g /_el/dashboard/project/.*/crawl-wizard',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                        ),
+                        onSubmitted: (_) => _addRegexRestriction(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: _addRegexRestriction,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    child: const Text('Add'),
+                  ),
+                ],
+              ),
+              
+              // Regular expression restrictions list
+              if (_regexRestrictions.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text(
+                  'Regular expression restrictions',
+                  style: GoogleFonts.roboto(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'These restrictions will only apply to this crawl session',
+                  style: GoogleFonts.roboto(
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // List of regex patterns with delete buttons
+                ...List.generate(_regexRestrictions.length, (index) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCBDCF6),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _regexRestrictions[index],
+                            style: TextStyle(
+                              fontFamily: 'monospace',
+                              color: const Color(0xFF191C20),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 18),
+                          onPressed: () => _removeRegexRestriction(index),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          color: Colors.black54,
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ],
+          ),
         ),
       ],
     );

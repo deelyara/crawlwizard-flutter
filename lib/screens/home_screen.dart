@@ -8,7 +8,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Easyling Crawl Wizard'),
+        title: const Text('Easyling Crawl Wizard in Flutter'),
         centerTitle: false,
       ),
       body: Center(
