@@ -1,8 +1,7 @@
 // File: lib/screens/type_screen.dart
 import 'package:flutter/material.dart';
 import '../models/crawl_config.dart';
-import '../widgets/option_card.dart';
-import '../widgets/information_tooltip.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class TypeScreen extends StatelessWidget {
   final CrawlConfig config;
@@ -16,81 +15,239 @@ class TypeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = const Color(0xFF266DAF);
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title with tooltip
-        Row(
-          children: [
-            Text(
-              'Select Crawl Type',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(width: 8),
-            const InformationTooltip(
-              message: 'Choose how you want to crawl the website.',
-            ),
-          ],
+        Text(
+          'What do you need to do with your content?',
+          style: GoogleFonts.roboto(
+            fontSize: 24,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
-          'What do you want to do with the website content?',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          'Choose based on where you are in your translation process',
+          style: GoogleFonts.roboto(
+            fontSize: 14,
+            color: Colors.black87,
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 32),
 
-        // Type options
-        SimpleOptionCard(
-          isSelected: config.crawlType == CrawlType.discovery,
-          title: 'Discovery',
-          subtitle: 'Just map the site structure without saving content',
-          icon: Icons.explore_outlined,
-          onTap: () {
-            config.crawlType = CrawlType.discovery;
+        // Radio options
+        _buildRadioOption(
+          title: 'Discovery crawl',
+          subtitle: 'Maps site structure and count words without storing content',
+          value: CrawlType.discovery,
+          groupValue: config.crawlType,
+          onChanged: (value) {
+            config.crawlType = value!;
             onConfigUpdate();
           },
+          primaryColor: primaryColor,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
 
-        SimpleOptionCard(
-          isSelected: config.crawlType == CrawlType.contentExtraction,
-          title: 'Content Extraction',
-          subtitle: 'Save all the content from the pages',
-          icon: Icons.download_outlined,
-          onTap: () {
-            config.crawlType = CrawlType.contentExtraction;
+        _buildRadioOption(
+          title: 'Content extraction',
+          subtitle: 'Extracts and stores content for translation. Uses your subscription word quota',
+          value: CrawlType.contentExtraction,
+          groupValue: config.crawlType,
+          onChanged: (value) {
+            config.crawlType = value!;
             onConfigUpdate();
           },
+          primaryColor: primaryColor,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
 
-        SimpleOptionCard(
-          isSelected: config.crawlType == CrawlType.newContentDetection,
-          title: 'New Content Detection',
-          subtitle: 'Find only new or changed content since last crawl',
-          icon: Icons.find_in_page_outlined,
-          onTap: () {
-            config.crawlType = CrawlType.newContentDetection;
+        _buildRadioOption(
+          title: 'New content detection',
+          subtitle: 'Counts words in new content without storing translatable content',
+          value: CrawlType.newContentDetection,
+          groupValue: config.crawlType,
+          onChanged: (value) {
+            config.crawlType = value!;
             onConfigUpdate();
           },
+          primaryColor: primaryColor,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
 
-        SimpleOptionCard(
-          isSelected: config.crawlType == CrawlType.tlsContentExtraction,
-          title: 'Language-specific Content',
-          subtitle: 'For websites with different content per language',
-          icon: Icons.language_outlined,
-          onTap: () {
-            config.crawlType = CrawlType.tlsContentExtraction;
+        _buildRadioOption(
+          title: 'Target language specific (TLS) content extraction',
+          subtitle: 'Crawls the website multiple times, once for each target language',
+          value: CrawlType.tlsContentExtraction,
+          groupValue: config.crawlType,
+          onChanged: (value) {
+            config.crawlType = value!;
             onConfigUpdate();
           },
+          primaryColor: primaryColor,
+        ),
+        const SizedBox(height: 40),
+
+        // Prerender option
+        Container(
+          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8F9FF),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Transform.scale(
+                scale: 1.1,
+                child: Checkbox(
+                  value: config.prerenderPages,
+                  onChanged: (value) {
+                    config.prerenderPages = value!;
+                    onConfigUpdate();
+                  },
+                  activeColor: primaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Prerender pages for more accurate wordcount',
+                      style: GoogleFonts.roboto(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Great to detect JS-generated content',
+                      style: GoogleFonts.roboto(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Use Crest option (admin only)
+        Container(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Transform.scale(
+                scale: 1.1,
+                child: Checkbox(
+                  value: false, // This would be controlled by a config value
+                  onChanged: null, // Disabled for non-admin users
+                  activeColor: primaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Row(
+                  children: [
+                    Text(
+                      'Use Crest - Use Crest for content extraction (requires prerender)',
+                      style: GoogleFonts.roboto(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.black45,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Admin only feature',
+                        style: GoogleFonts.roboto(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildRadioOption({
+    required String title,
+    required String subtitle,
+    required CrawlType value,
+    required CrawlType groupValue,
+    required ValueChanged<CrawlType?> onChanged,
+    required Color primaryColor,
+  }) {
+    return InkWell(
+      onTap: () => onChanged(value),
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Radio<CrawlType>(
+              value: value,
+              groupValue: groupValue,
+              onChanged: onChanged,
+              activeColor: primaryColor,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.roboto(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.roboto(
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

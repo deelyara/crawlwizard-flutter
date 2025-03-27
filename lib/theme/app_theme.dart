@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppTheme {
   // Primary Easyling color
-  static const Color primaryColor = Color(0xFF266DAF);
+  static const Color primaryColor = Color(0xFF37618E);
 
   // Define color scheme
   static final ColorScheme colorScheme = ColorScheme.fromSeed(

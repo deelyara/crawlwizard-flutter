@@ -7,7 +7,7 @@ enum CrawlType {
   tlsContentExtraction,
 }
 
-enum CrawlScope { entireSite, currentPages, specificPages }
+enum CrawlScope { entireSite, currentPages, specificPages, sitemapPages }
 
 enum SnapshotOption { useExisting, compareContent, rebuildAll, createNew }
 
@@ -21,6 +21,7 @@ class CrawlConfig {
   // Scope step
   CrawlScope crawlScope = CrawlScope.entireSite;
   int pageLimit = 100;
+  int? maxDepth; // Optional max crawl depth
   List<String> specificUrls = [];
   bool includeNewUrls = false;
 
@@ -43,8 +44,10 @@ class CrawlConfig {
   bool collectExternalDomains = false;
   bool collectRedirectionPages = false;
   bool collectShortLinks = false;
-  bool skipContentTypeCheck = true;
+  bool skipContentTypeCheck = false;
+  bool doNotReloadExistingResources = false;
   bool useEtags = false;
+  bool crawlNewUrlsNotInList = false;
   int simultaneousRequests = 5;
   String sessionCookie = '';
 

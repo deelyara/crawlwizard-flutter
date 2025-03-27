@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ModernStepIndicator extends StatelessWidget {
   final int currentStep;
@@ -14,137 +15,107 @@ class ModernStepIndicator extends StatelessWidget {
     required this.onTap,
   });
 
-  // Get appropriate icon for each step
-  IconData _getIconForStep(int step) {
-    switch (step) {
-      case 0: // Type
-        return Icons.category_outlined;
-      case 1: // Scope
-        return Icons.language_outlined;
-      case 2: // Restrictions
-        return Icons.filter_list_outlined;
-      case 3: // Origin Snapshots
-        return Icons.history_outlined;
-      case 4: // Fine-tune
-        return Icons.tune_outlined;
-      case 5: // Recurrence
-        return Icons.calendar_month_outlined;
-      case 6: // Review
-        return Icons.assignment_outlined;
-      default:
-        return Icons.circle_outlined;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final Color primaryColor = const Color(0xFF37618E);
+    final Color selectedTextColor = const Color(0xFF181C20);
+    final Color lineColor = Colors.grey.shade300; // Consistent line color
     
     return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
-        border: Border(
-          bottom: BorderSide(
-            color: theme.colorScheme.outlineVariant.withOpacity(0.5),
-            width: 1,
-          ),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-      height: 72,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: List.generate(stepCount, (index) {
-            final bool isActive = index == currentStep;
-            final bool isPast = index < currentStep;
-            final bool isClickable = isPast || isActive;
-            
-            return GestureDetector(
-              onTap: isClickable ? () => onTap(index) : null,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Row(
-                  children: [
-                    // Step Circle with Icon
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isActive 
-                            ? theme.colorScheme.primary
-                            : isPast 
-                                ? theme.colorScheme.primary.withOpacity(0.15)
-                                : theme.colorScheme.surfaceVariant.withOpacity(0.5),
-                        border: isActive || isPast
-                            ? Border.all(
-                                color: isActive 
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.primary.withOpacity(0.5),
-                                width: 2,
-                              )
-                            : Border.all(
-                                color: theme.colorScheme.outlineVariant,
+      width: 200,
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 24.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: List.generate(stepCount, (index) {
+          final bool isActive = index == currentStep;
+          final bool isPast = index < currentStep;
+          final bool isClickable = isPast || isActive;
+          final bool isNotLast = index < stepCount - 1;
+          
+          return Column(
+            children: [
+              // Step with number and text
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Column for number and connecting line
+                  SizedBox(
+                    width: 32,
+                    child: Column(
+                      children: [
+                        // Circle with number
+                        GestureDetector(
+                          onTap: isClickable ? () => onTap(index) : null,
+                          child: Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isActive || isPast ? primaryColor : Colors.grey.shade200,
+                              border: Border.all(
+                                color: isActive || isPast ? primaryColor : Colors.grey.shade400,
                                 width: 1,
                               ),
-                      ),
-                      child: Center(
-                        child: isPast
-                            ? Icon(
-                                Icons.check_rounded,
-                                color: theme.colorScheme.primary,
-                                size: 18,
-                              )
-                            : Icon(
-                                _getIconForStep(index),
-                                color: isActive
-                                    ? Colors.white
-                                    : theme.colorScheme.onSurfaceVariant,
-                                size: 18,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${index + 1}',
+                                style: GoogleFonts.roboto(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: isActive || isPast ? Colors.white : Colors.grey.shade600,
+                                ),
                               ),
+                            ),
+                          ),
+                        ),
+                        
+                        // Gap between circle and line
+                        if (isNotLast) const SizedBox(height: 4),
+                        
+                        // Connector line (same color for all steps)
+                        if (isNotLast)
+                          Container(
+                            width: 1,
+                            height: 30, // Shorter line
+                            color: lineColor,
+                          ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(width: 12),
+                  
+                  // Step Title
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: isClickable ? () => onTap(index) : null,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 6.0),
+                        child: Text(
+                          stepTitles[index],
+                          style: GoogleFonts.roboto(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: isActive 
+                                ? selectedTextColor
+                                : Colors.black87,
+                          ),
+                        ),
                       ),
                     ),
-                    
-                    const SizedBox(width: 8),
-                    
-                    // Step Title
-                    Text(
-                      stepTitles[index],
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                        color: isActive
-                            ? theme.colorScheme.primary
-                            : isPast
-                                ? theme.colorScheme.onSurface
-                                : theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    
-                    // Connector line if not the last step
-                    if (index < stepCount - 1)
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 16),
-                        width: 24,
-                        height: 1,
-                        color: isPast && index + 1 <= currentStep
-                            ? theme.colorScheme.primary.withOpacity(0.5)
-                            : theme.colorScheme.outlineVariant,
-                      ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            );
-          }),
-        ),
+              
+              // Equal spacing after each step
+              if (isNotLast)
+                const SizedBox(height: 12),
+            ],
+          );
+        }),
       ),
     );
   }

@@ -313,6 +313,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
       case CrawlScope.specificPages:
         scopeText = 'Crawl specific pages';
         break;
+      case CrawlScope.sitemapPages:
+        scopeText = 'Crawl with sitemap';
+        break;
     }
 
     return Column(
@@ -322,8 +325,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
         if (widget.config.crawlScope == CrawlScope.entireSite) ...[
           const SizedBox(height: 8),
           Text('Page limit: ${widget.config.pageLimit}'),
+          if (widget.config.maxDepth != null) ...[
+            const SizedBox(height: 8),
+            Text('Max crawl depth: ${widget.config.maxDepth}'),
+          ],
         ],
-        if (widget.config.crawlScope == CrawlScope.specificPages &&
+        if ((widget.config.crawlScope == CrawlScope.specificPages || 
+             widget.config.crawlScope == CrawlScope.sitemapPages) &&
             widget.config.specificUrls.isNotEmpty) ...[
           const SizedBox(height: 8),
           Text('Number of specific URLs: ${widget.config.specificUrls.length}'),

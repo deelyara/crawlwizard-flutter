@@ -1,5 +1,6 @@
 // File: lib/widgets/wizard_navigation.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class WizardNavigation extends StatelessWidget {
   final int currentStep;
@@ -25,84 +26,86 @@ class WizardNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final primaryColor = const Color(0xFF266DAF);
     
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 6,
-            offset: const Offset(0, -2),
-          ),
-        ],
-        border: Border(
-          top: BorderSide(
-            color: theme.colorScheme.outlineVariant.withOpacity(0.5),
-            width: 1,
-          ),
-        ),
-      ),
+      color: Colors.white,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          // Left side: Back button or empty space
-          if (currentStep > 0)
-            OutlinedButton.icon(
-              onPressed: onBack,
-              icon: const Icon(Icons.arrow_back, size: 16),
-              label: const Text('Back'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
+          // Left side can have a different widget if needed
+          const Spacer(),
+          
+          // Navigation buttons grouped together
+          Row(
+            children: [
+              // Back button (only if not on first step)
+              if (currentStep > 0)
+                TextButton(
+                  onPressed: onBack,
+                  style: TextButton.styleFrom(
+                    foregroundColor: primaryColor,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  child: Text(
+                    'Back',
+                    style: GoogleFonts.roboto(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+              
+              // Back to Review button (if applicable)
+              if (isFromReviewStep && onBackToReview != null)
+                TextButton(
+                  onPressed: onBackToReview,
+                  style: TextButton.styleFrom(
+                    foregroundColor: primaryColor,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  child: Text(
+                    'Back to Review',
+                    style: GoogleFonts.roboto(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+                
+              // Small spacing between buttons
+              const SizedBox(width: 8),
+              
+              // Next button
+              ElevatedButton(
+                onPressed: isLastStep ? onComplete : onNext,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+                child: Text(
+                  'Next',
+                  style: GoogleFonts.roboto(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               ),
-            )
-          else
-            // Empty container to maintain layout
-            const SizedBox(width: 80),
-            
-          // Center: Back to Review button (if from review step)
-          if (isFromReviewStep && onBackToReview != null)
-            OutlinedButton.icon(
-              onPressed: onBackToReview,
-              icon: const Icon(Icons.visibility, size: 16),
-              label: const Text('Back to Review'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: theme.colorScheme.primary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            
-          // Right side: Next/Complete button
-          ElevatedButton.icon(
-            onPressed: isLastStep ? onComplete : onNext,
-            icon: Icon(
-              isLastStep ? Icons.play_arrow : Icons.arrow_forward,
-              size: 16,
-            ),
-            label: Text(isLastStep ? 'Start Crawl' : 'Continue'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 10,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
+            ],
           ),
         ],
       ),

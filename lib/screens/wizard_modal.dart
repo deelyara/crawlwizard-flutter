@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/crawl_config.dart';
 import '../widgets/modern_step_indicator.dart';
 import '../widgets/wizard_navigation.dart';
@@ -31,10 +32,10 @@ class _WizardModalState extends State<WizardModal> {
   
   // Step titles
   final List<String> _stepTitles = [
-    'Type',
-    'Scope',
-    'Restrictions',
-    'Origin Snapshots',
+    'Select type',
+    'Set scope',
+    'Set restrictions',
+    'Origin snapshot',
     'Fine-tune',
     'Recurrence',
     'Review',
@@ -105,111 +106,116 @@ class _WizardModalState extends State<WizardModal> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final primaryColor = const Color(0xFF37618E);
     
     return Dialog(
       elevation: 0,
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.all(24),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: 900,
-          maxHeight: 700,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Modal header with title and close button
-            Container(
-              padding: const EdgeInsets.only(left: 24, right: 16, top: 16, bottom: 16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: 900,
+            maxHeight: 700,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Modal header with title and close button
+              Padding(
+                padding: const EdgeInsets.only(left: 24, right: 16, top: 16, bottom: 16),
+                child: Row(
+                  children: [
+                    // Modal title
+                    Expanded(
+                      child: Text(
+                        'Crawl wizard - ${_stepTitles[_currentStep]}',
+                        style: GoogleFonts.roboto(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                    
+                    // Close button
+                    IconButton(
+                      onPressed: widget.onClose ?? () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close),
+                      tooltip: 'Close',
+                    ),
+                  ],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 3,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
               ),
-              child: Row(
-                children: [
-                  // Modal title
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+              
+              // Divider
+              const Divider(height: 1, thickness: 1),
+              
+              // Content area with left sidebar for steps and main content
+              Expanded(
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Left sidebar with step indicator
+                      ModernStepIndicator(
+                        currentStep: _currentStep,
+                        stepCount: _stepTitles.length,
+                        stepTitles: _stepTitles,
+                        onTap: (index) {
+                          // Only allow navigating to completed steps
+                          if (index <= _currentStep) {
+                            _navigateToStep(index);
+                          }
+                        },
+                      ),
+                      
+                      // Vertical divider (not crossing horizontal lines)
+                      Container(
+                        width: 1,
+                        margin: const EdgeInsets.only(top: 1, bottom: 1),
+                        color: Colors.grey.shade200,
+                      ),
+                      
+                      // Main content area
+                      Expanded(
+                        child: Column(
                           children: [
-                            Icon(
-                              Icons.settings_outlined,
-                              color: theme.colorScheme.primary,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Crawl Wizard: ${_stepTitles[_currentStep]}',
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.onSurface,
+                            // Step content
+                            Expanded(
+                              child: SingleChildScrollView(
+                                padding: const EdgeInsets.all(24),
+                                child: _buildStepContent(),
                               ),
+                            ),
+                            
+                            // Divider before navigation
+                            const Divider(height: 1, thickness: 1),
+                            
+                            // Navigation footer
+                            WizardNavigation(
+                              currentStep: _currentStep,
+                              totalSteps: _stepTitles.length,
+                              onNext: _nextStep,
+                              onBack: _previousStep,
+                              isLastStep: _currentStep == _stepTitles.length - 1,
+                              onComplete: _handleComplete,
+                              isFromReviewStep: _fromReviewStep,
+                              onBackToReview: _fromReviewStep ? _navigateToReview : null,
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  
-                  // Close button
-                  IconButton(
-                    onPressed: widget.onClose ?? () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close),
-                    tooltip: 'Close',
-                  ),
-                ],
+                ),
               ),
-            ),
-            
-            // Step indicator
-            ModernStepIndicator(
-              currentStep: _currentStep,
-              stepCount: _stepTitles.length,
-              stepTitles: _stepTitles,
-              onTap: (index) {
-                // Only allow navigating to completed steps
-                if (index <= _currentStep) {
-                  _navigateToStep(index);
-                }
-              },
-            ),
-            
-            // Main content area
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: _buildStepContent(),
-              ),
-            ),
-            
-            // Navigation footer
-            WizardNavigation(
-              currentStep: _currentStep,
-              totalSteps: _stepTitles.length,
-              onNext: _nextStep,
-              onBack: _previousStep,
-              isLastStep: _currentStep == _stepTitles.length - 1,
-              onComplete: _handleComplete,
-              isFromReviewStep: _fromReviewStep,
-              onBackToReview: _fromReviewStep ? _navigateToReview : null,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

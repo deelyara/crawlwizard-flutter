@@ -261,6 +261,14 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
             color: Colors.black87,
           ),
         ),
+        const SizedBox(height: 8),
+        Text(
+          'Define which content to include and exclude during this crawl session',
+          style: GoogleFonts.roboto(
+            fontSize: 14,
+            color: Colors.black87,
+          ),
+        ),
         const SizedBox(height: 32),
         
         // Existing project restrictions section (if present)
@@ -361,7 +369,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
             children: [
               // Add temporary restrictions section
               Text(
-                _makePermanent ? 'Add new project restrictions' : 'Add temporary restrictions for this crawl',
+                'Add temporary restrictions for this crawl',
                 style: headerStyle,
               ),
               const SizedBox(height: 8),
