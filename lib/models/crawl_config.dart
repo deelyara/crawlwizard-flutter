@@ -15,11 +15,11 @@ enum RecurrenceFrequency { none, daily, weekly, monthly, custom }
 
 class CrawlConfig {
   // Type step
-  CrawlType crawlType = CrawlType.discovery;
+  CrawlType? crawlType;
   bool prerenderPages = false;
 
   // Scope step
-  CrawlScope crawlScope = CrawlScope.entireSite;
+  CrawlScope? crawlScope;
   int pageLimit = 100;
   int? maxDepth; // Optional max crawl depth
   List<String> specificUrls = [];
@@ -28,6 +28,7 @@ class CrawlConfig {
   // Restrictions step
   List<String> includePrefixes = [];
   List<String> excludePrefixes = [];
+  List<String> regexRestrictions = []; // Added for regex restrictions
   bool makePermanent = false;
 
   // Snapshot step
@@ -56,8 +57,10 @@ class CrawlConfig {
   TimeOfDay recurrenceTime = const TimeOfDay(hour: 2, minute: 0);
   int recurrenceDayOfWeek = 1; // Monday
   int recurrenceDayOfMonth = 1;
+  int recurrenceCustomDays = 7; // Default to weekly for custom days
   bool useRotatingSnapshots = false;
   List<String> selectedRotatingSnapshots = [];
+  DateTime? firstScheduledCrawlDate;
   
   // User note for the crawl (optional)
   String? userNote;
@@ -78,8 +81,10 @@ class CrawlConfig {
       case CrawlType.newContentDetection:
         baseCost = 1.5; // €1.5 per 1000 pages
         break;
+      case null:
+        return 0.0; // No crawl type selected yet
     }
-
+    
     // Adjust based on resource collection
     if (collectJsCssResources) baseCost += 0.5;
     if (collectImages) baseCost += 1.0;

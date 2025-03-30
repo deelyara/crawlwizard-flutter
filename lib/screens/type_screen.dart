@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/crawl_config.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class TypeScreen extends StatelessWidget {
+class TypeScreen extends StatefulWidget {
   final CrawlConfig config;
   final VoidCallback onConfigUpdate;
 
@@ -12,7 +12,12 @@ class TypeScreen extends StatelessWidget {
     required this.config,
     required this.onConfigUpdate,
   });
+  
+  @override
+  State<TypeScreen> createState() => _TypeScreenState();
+}
 
+class _TypeScreenState extends State<TypeScreen> {
   @override
   Widget build(BuildContext context) {
     final primaryColor = const Color(0xFF266DAF);
@@ -43,10 +48,12 @@ class TypeScreen extends StatelessWidget {
           title: 'Discovery crawl',
           subtitle: 'Maps site structure and count words without storing content',
           value: CrawlType.discovery,
-          groupValue: config.crawlType,
+          groupValue: widget.config.crawlType,
           onChanged: (value) {
-            config.crawlType = value!;
-            onConfigUpdate();
+            setState(() {
+              widget.config.crawlType = value;
+              widget.onConfigUpdate();
+            });
           },
           primaryColor: primaryColor,
         ),
@@ -56,10 +63,12 @@ class TypeScreen extends StatelessWidget {
           title: 'Content extraction',
           subtitle: 'Extracts and stores content for translation. Uses your subscription word quota',
           value: CrawlType.contentExtraction,
-          groupValue: config.crawlType,
+          groupValue: widget.config.crawlType,
           onChanged: (value) {
-            config.crawlType = value!;
-            onConfigUpdate();
+            setState(() {
+              widget.config.crawlType = value;
+              widget.onConfigUpdate();
+            });
           },
           primaryColor: primaryColor,
         ),
@@ -69,10 +78,12 @@ class TypeScreen extends StatelessWidget {
           title: 'New content detection',
           subtitle: 'Counts words in new content without storing translatable content',
           value: CrawlType.newContentDetection,
-          groupValue: config.crawlType,
+          groupValue: widget.config.crawlType,
           onChanged: (value) {
-            config.crawlType = value!;
-            onConfigUpdate();
+            setState(() {
+              widget.config.crawlType = value;
+              widget.onConfigUpdate();
+            });
           },
           primaryColor: primaryColor,
         ),
@@ -82,10 +93,12 @@ class TypeScreen extends StatelessWidget {
           title: 'Target language specific (TLS) content extraction',
           subtitle: 'Crawls the website multiple times, once for each target language',
           value: CrawlType.tlsContentExtraction,
-          groupValue: config.crawlType,
+          groupValue: widget.config.crawlType,
           onChanged: (value) {
-            config.crawlType = value!;
-            onConfigUpdate();
+            setState(() {
+              widget.config.crawlType = value;
+              widget.onConfigUpdate();
+            });
           },
           primaryColor: primaryColor,
         ),
@@ -105,10 +118,12 @@ class TypeScreen extends StatelessWidget {
               Transform.scale(
                 scale: 1.1,
                 child: Checkbox(
-                  value: config.prerenderPages,
+                  value: widget.config.prerenderPages,
                   onChanged: (value) {
-                    config.prerenderPages = value!;
-                    onConfigUpdate();
+                    setState(() {
+                      widget.config.prerenderPages = value!;
+                      widget.onConfigUpdate();
+                    });
                   },
                   activeColor: primaryColor,
                   shape: RoundedRectangleBorder(
@@ -202,7 +217,7 @@ class TypeScreen extends StatelessWidget {
     required String title,
     required String subtitle,
     required CrawlType value,
-    required CrawlType groupValue,
+    required CrawlType? groupValue,
     required ValueChanged<CrawlType?> onChanged,
     required Color primaryColor,
   }) {

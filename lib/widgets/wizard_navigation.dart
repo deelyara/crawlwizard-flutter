@@ -98,7 +98,7 @@ class WizardNavigation extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  'Next',
+                  isLastStep ? 'Start crawl' : 'Next',
                   style: GoogleFonts.roboto(
                     fontSize: 14,
                     fontWeight: FontWeight.w400,

@@ -24,7 +24,7 @@ class ModernStepIndicator extends StatelessWidget {
     return Container(
       width: 200,
       color: Colors.white,
-      padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 24.0),
+      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,8 +49,8 @@ class ModernStepIndicator extends StatelessWidget {
                         GestureDetector(
                           onTap: isClickable ? () => onTap(index) : null,
                           child: Container(
-                            width: 28,
-                            height: 28,
+                            width: 24,
+                            height: 24,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: isActive || isPast ? primaryColor : Colors.grey.shade200,
@@ -63,7 +63,7 @@ class ModernStepIndicator extends StatelessWidget {
                               child: Text(
                                 '${index + 1}',
                                 style: GoogleFonts.roboto(
-                                  fontSize: 13,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w500,
                                   color: isActive || isPast ? Colors.white : Colors.grey.shade600,
                                 ),
@@ -73,13 +73,13 @@ class ModernStepIndicator extends StatelessWidget {
                         ),
                         
                         // Gap between circle and line
-                        if (isNotLast) const SizedBox(height: 4),
+                        if (isNotLast) const SizedBox(height: 2),
                         
                         // Connector line (same color for all steps)
                         if (isNotLast)
                           Container(
                             width: 1,
-                            height: 30, // Shorter line
+                            height: 20, // Shorter line
                             color: lineColor,
                           ),
                       ],
@@ -93,11 +93,11 @@ class ModernStepIndicator extends StatelessWidget {
                     child: GestureDetector(
                       onTap: isClickable ? () => onTap(index) : null,
                       child: Padding(
-                        padding: const EdgeInsets.only(top: 6.0),
+                        padding: const EdgeInsets.only(top: 4.0),
                         child: Text(
                           stepTitles[index],
                           style: GoogleFonts.roboto(
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: FontWeight.w400,
                             color: isActive 
                                 ? selectedTextColor
@@ -112,7 +112,7 @@ class ModernStepIndicator extends StatelessWidget {
               
               // Equal spacing after each step
               if (isNotLast)
-                const SizedBox(height: 12),
+                const SizedBox(height: 8), // Reduced spacing
             ],
           );
         }),

@@ -44,6 +44,10 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
     _requestsController.text = widget.config.simultaneousRequests.toString();
     _userAgentController.text = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0";
     _sessionCookieController.text = widget.config.sessionCookie;
+    
+    // Setting the defaults for the options
+    widget.config.skipContentTypeCheck = true; // Enabled by default
+    widget.config.useEtags = false; // Disabled by default
   }
   
   @override
@@ -115,25 +119,25 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                         _buildCheckboxOption(
                           title: 'Also crawl new URLs not in the list',
                           value: widget.config.crawlNewUrlsNotInList,
-                          onChanged: (value) {
-                            setState(() {
+                        onChanged: (value) {
+                          setState(() {
                               widget.config.crawlNewUrlsNotInList = value ?? false;
-                              widget.onConfigUpdate();
-                            });
-                          },
-                        ),
-                      
+                            widget.onConfigUpdate();
+                          });
+                        },
+                      ),
+
                       if (isSpecificPagesSelected)
                         _buildCheckboxOption(
                           title: 'Also add new URLs not in the list above, if referred, but as "Unvisited"',
                           value: widget.config.includeNewUrls,
-                          onChanged: (value) {
-                            setState(() {
+                        onChanged: (value) {
+                          setState(() {
                               widget.config.includeNewUrls = value ?? false;
-                              widget.onConfigUpdate();
-                            });
-                          },
-                        ),
+                            widget.onConfigUpdate();
+                          });
+                        },
+                      ),
 
                       // HTML pages
               _buildCheckboxOption(
@@ -183,7 +187,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                 title: 'Collect short links (e.g. https://www.example.com/?p=123456)',
                         value: widget.config.collectShortLinks,
                 onChanged: (value) => _handleResourceDependencies('short_links', value),
-              ),
+                      ),
                     ],
                   ),
                 ),
@@ -306,9 +310,13 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                 // Generate Work package for the crawl
                 _buildCheckboxOption(
                   title: 'Generate Work package for the crawl',
-                  value: true,
+                  value: false, // Not selected by default
                   onChanged: (value) {
-                    // No action needed as this is always checked
+                    // Now we allow changes
+                    setState(() {
+                      // Update any work package related configuration
+                      widget.onConfigUpdate();
+                    });
                   },
                 ),
                 

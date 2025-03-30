@@ -49,6 +49,11 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
     // In a real app, load the config's include and exclude prefixes here
     _tempIncludePrefixes = ['/blog', '/news'];
     _tempExcludePrefixes = ['/about', '/contact'];
+    
+    // Load regex restrictions from config
+    if (widget.config.regexRestrictions.isNotEmpty) {
+      _regexRestrictions.addAll(widget.config.regexRestrictions);
+    }
   }
 
   @override
@@ -101,7 +106,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
       return;
     }
     
-    setState(() {
+      setState(() {
       // Handle comma-separated values
       final prefixes = value.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
       
@@ -115,21 +120,21 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
     });
     
     // Update the config
-    widget.onConfigUpdate();
+      widget.onConfigUpdate();
   }
-  
+
   // Remove a temporary restriction
   void _removeTemporaryRestriction(String prefix, bool isExclude) {
-    setState(() {
+      setState(() {
       if (isExclude) {
         _tempExcludePrefixes.remove(prefix);
       } else {
         _tempIncludePrefixes.remove(prefix);
       }
-    });
-    widget.onConfigUpdate();
+      });
+      widget.onConfigUpdate();
   }
-  
+
   // Toggle an existing restriction (enable/disable)
   void _toggleExistingRestriction(String prefix) {
     setState(() {
@@ -141,7 +146,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
     });
     widget.onConfigUpdate();
   }
-  
+
   // Add a regex restriction
   void _addRegexRestriction() {
     final value = _regexController.text.trim();
@@ -149,16 +154,20 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
     
     setState(() {
       _regexRestrictions.add(value);
+      // Add to config for tracking in the review screen
+      widget.config.regexRestrictions.add(value);
       _regexController.clear();
     });
     
     widget.onConfigUpdate();
   }
-  
+
   // Remove a regex restriction
   void _removeRegexRestriction(int index) {
     setState(() {
-      _regexRestrictions.removeAt(index);
+      final removedRegex = _regexRestrictions.removeAt(index);
+      // Also remove from config
+      widget.config.regexRestrictions.remove(removedRegex);
     });
     widget.onConfigUpdate();
   }
@@ -170,9 +179,10 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
     required bool isExclude,
     required bool isDisabled,
     required VoidCallback onRemove,
+    bool isRegex = false,
   }) {
     // Display with asterisk suffix for UI purposes
-    final displayText = '$prefix*';
+    final displayText = isRegex ? prefix : '$prefix*';
     final primaryColor = const Color(0xFF37618E);
     final chipTextColor = const Color(0xFF191C20);
     final chipColor = const Color(0xFFCBDCF6);
@@ -205,9 +215,9 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                         children: [
                           if (isTemporary && isHovering)
                             Icon(
-                              Icons.delete_outline,
+                              Icons.close,
                               size: 16,
-                              color: Colors.red.shade700,
+                              color: chipTextColor,
                             )
                           else
                             Icon(
@@ -220,10 +230,15 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                           const SizedBox(width: 6),
                           Text(
                             displayText,
-                            style: TextStyle(
-                              color: isDisabled ? Colors.grey.shade600 : chipTextColor,
-                              fontSize: 14,
-                            ),
+                            style: isRegex 
+                              ? GoogleFonts.robotoMono( // Monospace for regex
+                                  color: isDisabled ? Colors.grey.shade600 : chipTextColor,
+                                  fontSize: 14,
+                                )
+                              : TextStyle( // Regular style for other restrictions
+                                  color: isDisabled ? Colors.grey.shade600 : chipTextColor,
+                                  fontSize: 14,
+                                ),
                           ),
                         ],
                       ),
@@ -252,8 +267,8 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
+          children: [
+            Text(
           'Manage restrictions for this crawl',
           style: GoogleFonts.roboto(
             fontSize: 24,
@@ -285,12 +300,12 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+        Text(
                   'Existing project restrictions',
                   style: headerStyle,
-                ),
-                const SizedBox(height: 8),
-                Text(
+        ),
+        const SizedBox(height: 8),
+        Text(
                   'Click on a restriction to disable it for this crawl. Disabled restrictions will not be applied.',
                   style: GoogleFonts.roboto(
                     fontSize: 14,
@@ -364,9 +379,9 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.grey.shade300),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               // Add temporary restrictions section
               Text(
                 'Add temporary restrictions for this crawl',
@@ -417,8 +432,8 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
               // Restriction input field with validation
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
+                  children: [
+                    Expanded(
                     child: SizedBox(
                       height: 40,
                       child: TextField(
@@ -434,10 +449,10 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                           ),
                         ),
                         onSubmitted: (_) => _addRestriction(),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
+                    const SizedBox(width: 12),
                   ElevatedButton(
                     onPressed: _addRestriction,
                     style: ElevatedButton.styleFrom(
@@ -486,10 +501,10 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                         color: Colors.black87,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              
+                    ),
+                  ],
+                ),
+
               // Temporary restrictions section (only show if there are temporary restrictions)
               if (_tempIncludePrefixes.isNotEmpty || _tempExcludePrefixes.isNotEmpty) ...[
                 const SizedBox(height: 24),
@@ -510,7 +525,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                     color: Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
                 
                 // Temporary crawl pages starting with
                 if (_tempIncludePrefixes.isNotEmpty) ...[
@@ -543,7 +558,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                     "Don't crawl pages starting with:",
                     style: GoogleFonts.roboto(
                       fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w500,
                       color: Colors.black87,
                     ),
                   ),
@@ -580,12 +595,12 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+        Text(
                 'Add regular expression restrictions',
                 style: headerStyle,
-              ),
-              const SizedBox(height: 8),
-              Text(
+        ),
+        const SizedBox(height: 8),
+        Text(
                 'Exclude the pages matching the following regular expression during this crawl',
                 style: GoogleFonts.roboto(
                   fontSize: 14,
@@ -596,9 +611,9 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
               
               // Regex input field
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
+              crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
                     child: SizedBox(
                       height: 40,
                       child: TextField(
@@ -614,10 +629,10 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                           ),
                         ),
                         onSubmitted: (_) => _addRegexRestriction(),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
+                    const SizedBox(width: 12),
                   ElevatedButton(
                     onPressed: _addRegexRestriction,
                     style: ElevatedButton.styleFrom(
@@ -632,14 +647,14 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                       ),
                     ),
                     child: const Text('Add'),
-                  ),
-                ],
-              ),
-              
+                    ),
+                  ],
+                ),
+
               // Regular expression restrictions list
               if (_regexRestrictions.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Text(
+                  const SizedBox(height: 16),
+                  Text(
                   'Regular expression restrictions',
                   style: GoogleFonts.roboto(
                     fontSize: 14,
@@ -655,7 +670,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                     color: Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
                 
                 // List of regex patterns with delete buttons
                 ...List.generate(_regexRestrictions.length, (index) {
@@ -664,16 +679,16 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: const Color(0xFFCBDCF6),
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       children: [
                         Expanded(
                           child: Text(
                             _regexRestrictions[index],
-                            style: TextStyle(
-                              fontFamily: 'monospace',
+                            style: GoogleFonts.robotoMono(
                               color: const Color(0xFF191C20),
+                              fontSize: 14,
                             ),
                           ),
                         ),

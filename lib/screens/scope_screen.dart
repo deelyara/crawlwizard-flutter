@@ -105,7 +105,7 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
       message: message,
       textStyle: const TextStyle(color: Colors.white, fontSize: 14),
       decoration: BoxDecoration(
-        color: Colors.grey.shade600,
+        color: Colors.grey.shade700,
         borderRadius: BorderRadius.circular(4),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -132,8 +132,8 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
+          children: [
+            Text(
           'What do you want to crawl?',
           style: GoogleFonts.roboto(
             fontSize: 24,
@@ -156,7 +156,7 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
           groupValue: widget.config.crawlScope,
           onChanged: (value) {
             setState(() {
-              widget.config.crawlScope = value!;
+              widget.config.crawlScope = value;
               widget.onConfigUpdate();
             });
           },
@@ -266,7 +266,7 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
           groupValue: widget.config.crawlScope,
           onChanged: (value) {
             setState(() {
-              widget.config.crawlScope = value!;
+              widget.config.crawlScope = value;
               widget.onConfigUpdate();
             });
           },
@@ -308,7 +308,7 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
           groupValue: widget.config.crawlScope,
           onChanged: (value) {
             setState(() {
-              widget.config.crawlScope = value!;
+              widget.config.crawlScope = value;
               // Clear the sitemap flag if it was previously set
               widget.config.includePrefixes.remove('sitemap');
               widget.onConfigUpdate();
@@ -372,11 +372,11 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
             padding: const EdgeInsets.only(left: 40, right: 16),
             child: SizedBox(
               height: 200, // Fixed height for all containers
-              child: TextField(
+                child: TextField(
                 controller: _sitemapUrlsController,
-                decoration: InputDecoration(
+                  decoration: InputDecoration(
                   hintText: 'Paste a sitemap index URL, or multiple sitemaps:\nhttps://example.com/sitemap_index.xml\nhttps://example.com/post_sitemap1.xml\nhttps://example.com/page_sitemap2.xml',
-                  border: OutlineInputBorder(
+                    border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(4),
                   ),
                   contentPadding: const EdgeInsets.all(12),
@@ -384,14 +384,14 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
                 ),
                 maxLines: null,
                 expands: true,
-                onChanged: (value) {
-                  setState(() {
+                  onChanged: (value) {
+                      setState(() {
                     // Store sitemap URLs
                     widget.config.specificUrls = value.split('\n')
                         .where((url) => url.trim().isNotEmpty)
                         .toList();
-                    widget.onConfigUpdate();
-                  });
+                        widget.onConfigUpdate();
+                      });
                 },
                 textAlignVertical: TextAlignVertical.top,
               ),

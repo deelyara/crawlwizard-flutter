@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/crawl_config.dart';
+import '../widgets/information_tooltip.dart';
 
 class ReviewScreen extends StatefulWidget {
   final CrawlConfig config;
@@ -19,11 +22,27 @@ class ReviewScreen extends StatefulWidget {
 
 class _ReviewScreenState extends State<ReviewScreen> {
   late TextEditingController _noteController;
+  bool _showPreview = false;
+  bool _isNoteFocused = false;
+
+  // Sample data for testing restrictions display
+  final List<String> _projectIncludePrefixes = ['/blog', '/news'];
+  final List<String> _projectExcludePrefixes = ['/about', '/contact'];
+  final List<String> _tempIncludePrefixes = ['/product', '/category'];
+  final List<String> _tempExcludePrefixes = ['/admin', '/login'];
 
   @override
   void initState() {
     super.initState();
     _noteController = TextEditingController(text: widget.config.userNote ?? '');
+    
+    // Add sample data to config if empty (for testing purposes)
+    if (widget.config.includePrefixes.isEmpty) {
+      widget.config.includePrefixes = [..._projectIncludePrefixes, ..._tempIncludePrefixes];
+    }
+    if (widget.config.excludePrefixes.isEmpty) {
+      widget.config.excludePrefixes = [..._projectExcludePrefixes, ..._tempExcludePrefixes];
+    }
   }
 
   @override
@@ -35,243 +54,227 @@ class _ReviewScreenState extends State<ReviewScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final primaryColor = const Color(0xFF37618E);
     
-    return Column(
+    return SingleChildScrollView(
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Title and description
         Text(
           'Review and start crawl',
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
+            style: GoogleFonts.roboto(
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
           ),
         ),
         const SizedBox(height: 8),
         Text(
           'Review your configuration settings before starting the crawl.',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+            style: GoogleFonts.roboto(
+              fontSize: 14,
+              color: Colors.black87,
           ),
         ),
         const SizedBox(height: 24),
 
         // Type section
-        _buildSection(
-          context,
-          title: 'Crawl type',
-          content: _buildTypeContent(context),
-          onEdit: () => widget.onEditStep(0),
-        ),
-
-        const SizedBox(height: 16),
+          _buildSectionHeader(context, 'Crawl type'),
+          _buildTypeContent(context),
+          
+          const Divider(height: 32),
 
         // Scope section
-        _buildSection(
-          context,
-          title: 'Scope',
-          content: _buildScopeContent(context),
-          onEdit: () => widget.onEditStep(1),
-        ),
-
-        const SizedBox(height: 16),
+          _buildSectionHeader(context, 'Scope'),
+          _buildScopeContent(context),
+          
+          const Divider(height: 32),
 
         // Restrictions section
-        _buildSection(
-          context,
-          title: 'Restrictions',
-          content: _buildRestrictionsContent(context),
-          onEdit: () => widget.onEditStep(2),
-        ),
-
-        const SizedBox(height: 16),
+          _buildSectionHeader(context, 'Restrictions'),
+          _buildRestrictionsContent(context),
+          
+          const Divider(height: 32),
 
         // Origin Snapshot section
-        _buildSection(
-          context,
-          title: 'Origin Snapshot',
-          content: _buildSnapshotContent(context),
-          onEdit: () => widget.onEditStep(3),
-        ),
-
-        const SizedBox(height: 16),
+          _buildSectionHeader(context, 'Snapshot'),
+          _buildSnapshotContent(context),
+          
+          const Divider(height: 32),
 
         // Fine-tune section
-        _buildSection(
-          context,
-          title: 'Fine-tune',
-          content: _buildFinetuneContent(context),
-          onEdit: () => widget.onEditStep(4),
-        ),
-
-        const SizedBox(height: 16),
+          _buildSectionHeader(context, 'Fine-tune'),
+          _buildFinetuneContent(context),
+          
+          const Divider(height: 32),
 
         // Recurrence section
-        _buildSection(
-          context,
-          title: 'Recurrence',
-          content: _buildRecurrenceContent(context),
-          onEdit: () => widget.onEditStep(5),
-        ),
-
-        const SizedBox(height: 24),
-        
-        // Note field for user comments
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: theme.colorScheme.outlineVariant,
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
+          _buildSectionHeader(context, 'Recurrence'),
+          _buildRecurrenceContent(context),
+          
+          const Divider(height: 32),
+          
+          // Note field with markdown preview
+          Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(
-                      Icons.note_alt_outlined,
-                      color: theme.colorScheme.primary,
-                      size: 20,
+                  _buildSectionHeader(context, 'Notes', hideEditButton: true),
+                  TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _showPreview = !_showPreview;
+                      });
+                    },
+                    icon: Icon(
+                      _showPreview ? Icons.edit : Icons.preview,
+                      size: 16,
+                      color: primaryColor,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Notes',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                    label: Text(
+                      _showPreview ? 'Edit' : 'Preview',
+                      style: GoogleFonts.roboto(
+                        color: primaryColor,
+                        fontSize: 14,
+                      ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _noteController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText: 'Add any notes about this crawl (optional)',
-                    border: OutlineInputBorder(
+              // Fixed outline for notes section
+              _showPreview 
+                ? Container(
+                    decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    fillColor: theme.colorScheme.surface,
-                  ),
-                  onChanged: (value) {
-                    // Save the note to the config
-                    widget.config.userNote = value;
-                    widget.onConfigUpdate();
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-        
-        const SizedBox(height: 24),
-        
-        // Important Note
-        Card(
-          color: theme.colorScheme.primary.withOpacity(0.1),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(
-              color: theme.colorScheme.primary.withOpacity(0.3),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: theme.colorScheme.primary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Important Note',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
+                      border: Border.all(
+                        color: Colors.grey.shade300,
+                        width: 1.0,
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'The settings you selected determine what resources are collected during the crawl. To ensure optimal performance and accurate content extraction, these settings have been configured based on your selections.',
-                  style: theme.textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Resources will be collected based on your website structure and the crawl type you\'ve selected.',
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ],
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _showPreview = false;
+                        });
+                      },
+                      child: Container(
+                        constraints: const BoxConstraints(minHeight: 150),
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        child: _noteController.text.isEmpty
+                            ? Text(
+                                'No notes added',
+                                style: GoogleFonts.roboto(
+                                  fontSize: 14,
+                                  color: Colors.black38,
+                                ),
+                              )
+                            : Markdown(
+                                data: _noteController.text,
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
             ),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildSection(
-    BuildContext context, {
-    required String title,
-    required Widget content,
-    required VoidCallback onEdit,
-  }) {
-    final theme = Theme.of(context);
-    
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: theme.colorScheme.outlineVariant,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                  )
+                : Container(
+                    decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: _isNoteFocused ? primaryColor : Colors.grey.shade300,
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Focus(
+                      onFocusChange: (hasFocus) {
+                        setState(() {
+                          _isNoteFocused = hasFocus;
+                        });
+                      },
+                      child: TextField(
+                        controller: _noteController,
+                        maxLines: 6,
+                        decoration: InputDecoration(
+                          hintText: 'Add notes about this crawl (supports markdown)',
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.all(16),
+                        ),
+                        onChanged: (value) {
+                          widget.config.userNote = value;
+                          widget.onConfigUpdate();
+                        },
+                      ),
+                    ),
                   ),
-                ),
-                TextButton.icon(
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit, size: 16),
-                  label: const Text('Edit'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: theme.colorScheme.primary,
-                  ),
-                ),
-              ],
-            ),
+            ],
           ),
-          Divider(height: 1, color: theme.colorScheme.outlineVariant),
-          Padding(
-            padding: const EdgeInsets.all(16.0), 
-            child: content
-          ),
+          
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
+  Widget _buildSectionHeader(
+    BuildContext context, 
+    String title, 
+    {bool hideEditButton = false}
+  ) {
+    final primaryColor = const Color(0xFF37618E);
+    final int stepIndex = _getStepIndex(title);
+    
+    return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+          style: GoogleFonts.roboto(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        if (!hideEditButton && stepIndex >= 0)
+          IconButton(
+            onPressed: () => widget.onEditStep(stepIndex),
+                  icon: const Icon(Icons.edit, size: 16),
+            color: primaryColor,
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            tooltip: 'Edit',
+          ),
+      ],
+    );
+  }
+
+  int _getStepIndex(String title) {
+    switch (title) {
+      case 'Crawl type': return 0;
+      case 'Scope': return 1;
+      case 'Restrictions': return 2;
+      case 'Snapshot': return 3;
+      case 'Fine-tune': return 4;
+      case 'Recurrence': return 5;
+      default: return -1;
+    }
+  }
+
   Widget _buildTypeContent(BuildContext context) {
     String crawlTypeText = '';
+
+    if (widget.config.crawlType == null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Text(
+          'No crawl type selected',
+          style: GoogleFonts.roboto(fontSize: 14, color: Colors.red),
+        ),
+      );
+    }
 
     switch (widget.config.crawlType) {
       case CrawlType.discovery:
@@ -286,22 +289,44 @@ class _ReviewScreenState extends State<ReviewScreen> {
       case CrawlType.tlsContentExtraction:
         crawlTypeText = 'TLS Content extraction (Scan)';
         break;
+      case null: // This should never be reached due to the if check above
+        crawlTypeText = 'No type selected';
+        break;
     }
 
-    return Column(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(crawlTypeText),
+          Text(
+            crawlTypeText,
+            style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+          ),
         if (widget.config.prerenderPages) ...[
           const SizedBox(height: 8),
-          const Text('Prerender pages: Yes'),
+            Text(
+              'Prerender pages: Yes',
+              style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
   Widget _buildScopeContent(BuildContext context) {
     String scopeText = '';
+
+    if (widget.config.crawlScope == null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Text(
+          'No crawl scope selected',
+          style: GoogleFonts.roboto(fontSize: 14, color: Colors.red),
+        ),
+      );
+    }
 
     switch (widget.config.crawlScope) {
       case CrawlScope.entireSite:
@@ -316,59 +341,291 @@ class _ReviewScreenState extends State<ReviewScreen> {
       case CrawlScope.sitemapPages:
         scopeText = 'Crawl with sitemap';
         break;
+      case null: // This should never be reached due to the if check above
+        scopeText = 'No scope selected';
+        break;
     }
 
-    return Column(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(scopeText),
+          Text(
+            scopeText,
+            style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+          ),
         if (widget.config.crawlScope == CrawlScope.entireSite) ...[
           const SizedBox(height: 8),
-          Text('Page limit: ${widget.config.pageLimit}'),
-          if (widget.config.maxDepth != null) ...[
-            const SizedBox(height: 8),
-            Text('Max crawl depth: ${widget.config.maxDepth}'),
+            Text(
+              'Page limit: ${widget.config.pageLimit}',
+              style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+            ),
+            if (widget.config.maxDepth != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Max crawl depth: ${widget.config.maxDepth}',
+                style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+              ),
+            ],
           ],
-        ],
-        if ((widget.config.crawlScope == CrawlScope.specificPages || 
-             widget.config.crawlScope == CrawlScope.sitemapPages) &&
+          if ((widget.config.crawlScope == CrawlScope.specificPages || 
+               widget.config.crawlScope == CrawlScope.sitemapPages) &&
             widget.config.specificUrls.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Text('Number of specific URLs: ${widget.config.specificUrls.length}'),
+            Text(
+              'Number of specific URLs: ${widget.config.specificUrls.length}',
+              style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
   Widget _buildRestrictionsContent(BuildContext context) {
-    bool hasIncludes = widget.config.includePrefixes.isNotEmpty;
-    bool hasExcludes = widget.config.excludePrefixes.isNotEmpty;
+    // Get restrictions from the actual config
+    List<String> includePrefixes = widget.config.includePrefixes;
+    List<String> excludePrefixes = widget.config.excludePrefixes;
+    List<String> regexRestrictions = widget.config.regexRestrictions;
+    
+    bool hasIncludes = includePrefixes.isNotEmpty;
+    bool hasExcludes = excludePrefixes.isNotEmpty;
+    bool hasRegexRestrictions = regexRestrictions.isNotEmpty;
 
-    if (!hasIncludes && !hasExcludes) {
-      return const Text('No restrictions set.');
+    if (!hasIncludes && !hasExcludes && !hasRegexRestrictions) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Text(
+          'No restrictions set.',
+          style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+        ),
+      );
     }
 
-    return Column(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Path restrictions container
+          if (hasIncludes || hasExcludes) ...[
+            _buildPathRestrictionsContainer(
+              context, 
+              "Path restrictions", 
+              includePrefixes, 
+              excludePrefixes
+            ),
+            const SizedBox(height: 16),
+          ],
+          
+          // Regex restrictions container
+          if (hasRegexRestrictions) ...[
+            _buildRegexRestrictionsContainer(
+              context,
+              'Regular expression restrictions',
+              regexRestrictions
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildPathRestrictionsContainer(
+    BuildContext context,
+    String title,
+    List<String> includePrefixes,
+    List<String> excludePrefixes
+  ) {
+    bool hasIncludes = includePrefixes.isNotEmpty;
+    bool hasExcludes = excludePrefixes.isNotEmpty;
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (hasIncludes) ...[
-          const Text(
-            'Crawl pages starting with:',
-            style: TextStyle(fontWeight: FontWeight.bold),
+          // Container title
+          Text(
+            title,
+            style: GoogleFonts.roboto(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
           ),
-          const SizedBox(height: 4),
-          ...widget.config.includePrefixes.map((prefix) => Text('• $prefix')),
+          const SizedBox(height: 12),
+          
+          // Include prefixes
+          if (hasIncludes) ...[
+            Text(
+              'Crawl pages starting with:',
+              style: GoogleFonts.roboto(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: includePrefixes.map((prefix) {
+                final displayText = '$prefix*';
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12, 
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBDCF6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.check,
+                        size: 16,
+                        color: Color(0xFF191C20),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        displayText,
+                        style: GoogleFonts.roboto(
+                          color: const Color(0xFF191C20),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+          
+          if (hasIncludes && hasExcludes) const SizedBox(height: 16),
+          
+          // Exclude prefixes
+          if (hasExcludes) ...[
+            Text(
+              'Don\'t crawl pages starting with:',
+              style: GoogleFonts.roboto(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: excludePrefixes.map((prefix) {
+                final displayText = '$prefix*';
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12, 
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBDCF6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.check,
+                        size: 16,
+                        color: Color(0xFF191C20),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        displayText,
+                        style: GoogleFonts.roboto(
+                          color: const Color(0xFF191C20),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
         ],
-        if (hasIncludes && hasExcludes) const SizedBox(height: 8),
-        if (hasExcludes) ...[
-          const Text(
-            'Don\'t crawl pages starting with:',
-            style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+  
+  Widget _buildRegexRestrictionsContainer(
+    BuildContext context,
+    String title,
+    List<String> regexRestrictions
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Container title
+          Text(
+            title,
+            style: GoogleFonts.roboto(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
           ),
-          const SizedBox(height: 4),
-          ...widget.config.excludePrefixes.map((prefix) => Text('• $prefix')),
+          const SizedBox(height: 12),
+          
+          // Regex patterns
+          ...regexRestrictions.map((regex) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12, 
+                vertical: 8,
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFFCBDCF6),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.check,
+                    size: 16,
+                    color: Color(0xFF191C20),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    regex,
+                    style: GoogleFonts.robotoMono(
+                      color: const Color(0xFF191C20),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
         ],
-      ],
+      ),
     );
   }
 
@@ -390,86 +647,160 @@ class _ReviewScreenState extends State<ReviewScreen> {
         break;
     }
 
-    return Column(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(snapshotText),
+          Text(
+            snapshotText,
+            style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+          ),
         if (widget.config.snapshotOption != SnapshotOption.rebuildAll) ...[
           const SizedBox(height: 8),
           Text(
             widget.config.storeNewPages
                 ? 'New pages will be added to the snapshot'
                 : 'New pages will be ignored',
+              style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
           ),
         ],
         if (widget.config.selectedSnapshot.isNotEmpty &&
             (widget.config.snapshotOption == SnapshotOption.useExisting ||
                 widget.config.snapshotOption == SnapshotOption.compareContent)) ...[
           const SizedBox(height: 8),
-          Text('Selected snapshot: ${widget.config.selectedSnapshot}'),
+            Text(
+              'Selected snapshot: ${widget.config.selectedSnapshot}',
+              style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
   Widget _buildFinetuneContent(BuildContext context) {
-    List<String> resourcesCollected = [];
+    List<String> resources = [];
+    if (widget.config.collectHtmlPages) resources.add('HTML pages');
+    if (widget.config.collectJsCssResources) resources.add('JS/CSS resources');
+    if (widget.config.collectImages) resources.add('Images');
+    if (widget.config.collectBinaryResources) resources.add('Binary resources');
+    if (widget.config.collectErrorPages) resources.add('Error pages');
+    if (widget.config.collectExternalDomains) resources.add('External domain resources');
+    if (widget.config.collectRedirectionPages) resources.add('Redirection pages');
+    if (widget.config.collectShortLinks) resources.add('Short links');
 
-    if (widget.config.collectHtmlPages) resourcesCollected.add('HTML pages');
-    if (widget.config.collectJsCssResources)
-      resourcesCollected.add('JS/CSS resources');
-    if (widget.config.collectImages) resourcesCollected.add('Images');
-    if (widget.config.collectBinaryResources)
-      resourcesCollected.add('Binary resources');
-    if (widget.config.collectErrorPages) resourcesCollected.add('Error pages');
-    if (widget.config.collectExternalDomains)
-      resourcesCollected.add('External domain resources');
-    if (widget.config.collectRedirectionPages)
-      resourcesCollected.add('Redirection pages');
-    if (widget.config.collectShortLinks) resourcesCollected.add('Short links');
+    // Additional crawl settings
+    List<String> additionalSettings = [];
+    if (widget.config.skipContentTypeCheck) additionalSettings.add('Skip content-type check');
+    if (widget.config.doNotReloadExistingResources) additionalSettings.add('Do not reload existing resources');
+    if (widget.config.useEtags) additionalSettings.add('Use ETags');
+    if (widget.config.crawlNewUrlsNotInList) additionalSettings.add('Crawl new URLs not in list');
 
-    return Column(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+          // Resources to collect
+          if (resources.isNotEmpty) ...[
+            Text(
           'Resources to collect:',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        resourcesCollected.isEmpty
-            ? const Text('No resources selected')
-            : Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children:
-                  resourcesCollected.map((resource) {
-                    return Chip(
-                      label: Text(resource),
-                      backgroundColor:
-                          Theme.of(context).colorScheme.surfaceVariant,
-                      visualDensity: VisualDensity.compact,
-                      labelStyle: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    );
-                  }).toList(),
+              style: GoogleFonts.roboto(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
             ),
+            const SizedBox(height: 8),
+            ...resources.map((resource) => Padding(
+              padding: const EdgeInsets.only(bottom: 4.0),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.check,
+                    size: 16,
+                    color: Color(0xFF37618E),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    resource,
+                    style: GoogleFonts.roboto(
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            )).toList(),
+          ] else ...[
+            Text(
+              'No resources selected',
+              style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+            ),
+          ],
 
+          // Additional settings
+          if (additionalSettings.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text(
+              'Additional settings:',
+              style: GoogleFonts.roboto(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
         const SizedBox(height: 8),
-        Text('Simultaneous requests: ${widget.config.simultaneousRequests}'),
+            ...additionalSettings.map((setting) => Padding(
+              padding: const EdgeInsets.only(bottom: 4.0),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.check,
+                    size: 16,
+                    color: Color(0xFF37618E),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    setting,
+                    style: GoogleFonts.roboto(
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            )).toList(),
+          ],
+
+          const SizedBox(height: 12),
+          Text(
+            'Simultaneous requests: ${widget.config.simultaneousRequests}',
+            style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+          ),
 
         if (widget.config.sessionCookie.isNotEmpty) ...[
           const SizedBox(height: 8),
-          const Text('Session cookie: Set'),
+            Text(
+              'Session cookie: Set',
+              style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
   Widget _buildRecurrenceContent(BuildContext context) {
     if (widget.config.recurrenceFrequency == RecurrenceFrequency.none) {
-      return const Text('No recurring crawls scheduled');
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Text(
+          'No recurring crawls scheduled',
+          style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+        ),
+      );
     }
 
     String frequencyText = '';
@@ -521,31 +852,64 @@ class _ReviewScreenState extends State<ReviewScreen> {
         frequencyText = 'Monthly on the $dayOfMonth$suffix';
         break;
       case RecurrenceFrequency.custom:
-        frequencyText = 'Custom schedule';
+        frequencyText = 'Every ${widget.config.recurrenceCustomDays} days';
         break;
       case RecurrenceFrequency.none:
         frequencyText = 'No recurring crawls';
         break;
     }
 
-    return Column(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(frequencyText),
+          Text(
+            frequencyText,
+            style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+          ),
+          
+          if (widget.config.firstScheduledCrawlDate != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'First scheduled crawl: ${_formatDate(widget.config.firstScheduledCrawlDate!)}',
+              style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+            ),
+          ],
 
         if (widget.config.useRotatingSnapshots &&
             widget.config.selectedRotatingSnapshots.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          const Text(
+            const SizedBox(height: 12),
+            Text(
             'Rotating snapshots:',
-            style: TextStyle(fontWeight: FontWeight.bold),
+              style: GoogleFonts.roboto(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
           ),
           const SizedBox(height: 4),
           ...widget.config.selectedRotatingSnapshots.map(
-            (snapshot) => Text('• $snapshot'),
+              (snapshot) => Padding(
+                padding: const EdgeInsets.only(bottom: 4.0),
+                child: Text(
+                  '• $snapshot',
+                  style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+                ),
+              ),
           ),
         ],
       ],
+      ),
     );
+  }
+  
+  String _formatDate(DateTime date) {
+    final months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 }

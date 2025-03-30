@@ -25,7 +25,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
   ];
   
   // Selected radio option for how pages should be handled
-  int _selectedOption = 0;
+  int _selectedOption = -1;
   
   // Whether to use snapshot from previous crawl
   bool _useSnapshot = false;
@@ -43,16 +43,10 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize config values based on default toggle state (off)
+    // Ensure toggle is off by default and no snapshot options are selected
     _useSnapshot = false;
+    _selectedOption = -1; // No option selected by default
     widget.config.snapshotOption = SnapshotOption.rebuildAll;
-    
-    // Store selected option for when toggle is turned on
-    if (widget.config.snapshotOption == SnapshotOption.rebuildAll) {
-      _selectedOption = 2;
-    } else {
-      _selectedOption = widget.config.storeNewPages ? 0 : 1;
-    }
   }
 
   void _updateConfig() {
@@ -167,6 +161,10 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                       onChanged: (value) {
                         setState(() {
                           _useSnapshot = value;
+                          if (value) {
+                            // When turned on, ensure no option is selected initially
+                            _selectedOption = -1;
+                          }
                           _updateConfig();
                         });
                       },
@@ -176,185 +174,180 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                 ],
               ),
               
-              const SizedBox(height: 4),
-              
-              // Description text
-              Text(
-                'Compare content with a previous crawl to detect changes',
-                style: GoogleFonts.roboto(
-                  fontSize: 14,
-                  color: Colors.black87,
-                ),
-              ),
-              
-              // Snapshot selection dropdown - always visible but grayed out when toggle is off
-              const SizedBox(height: 16),
-              Text(
-                'Select snapshot to use:',
-                style: GoogleFonts.roboto(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: _useSnapshot ? Colors.black87 : Colors.black38,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: containerWidth,
-                child: DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                    enabled: _useSnapshot,
-                  ),
-                  value: availableSnapshots.first,
-                  items: availableSnapshots.map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(
-                        value,
-                        style: GoogleFonts.roboto(
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: _useSnapshot 
-                    ? (newValue) {
-                        if (newValue != null) {
-                          setState(() {
-                            widget.config.selectedSnapshot = newValue;
-                            _updateConfig();
-                          });
-                        }
-                      }
-                    : null,
+              // Only show description and options when toggle is ON
+              if (_useSnapshot) ...[
+                const SizedBox(height: 4),
+                
+                // Description text
+                Text(
+                  'Compare content with a previous crawl to detect changes',
                   style: GoogleFonts.roboto(
-                    color: _useSnapshot ? Colors.black87 : Colors.black38,
+                    fontSize: 14,
+                    color: Colors.black87,
                   ),
                 ),
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // How should new pages be handled section
-              Text(
-                'How should new pages be handled?',
-                style: headerStyle.copyWith(
-                  color: _useSnapshot ? Colors.black87 : Colors.black38,
-                ),
-              ),
-              const SizedBox(height: 16),
-              
-              // Option 1: Reuse existing pages and store new pages
-              _buildRadioOption(
-                value: 0,
-                groupValue: displayedSelectedOption,
-                title: 'Reuse existing pages and store new pages',
-                description: 'For every visited page, the crawler checks whether it is in the Snapshot already. If it isn\'t, it adds it. This option doesn\'t update existing pages in the Snapshot.',
-                onChanged: (value) {
-                  if (value != null && _useSnapshot) {
-                    setState(() {
-                      _selectedOption = value;
-                      _updateConfig();
-                    });
-                  }
-                },
-                isEnabled: _useSnapshot,
-              ),
-              
-              const SizedBox(height: 8),
-              
-              // Option 2: Reuse existing pages but don't store new ones
-              _buildRadioOption(
-                value: 1,
-                groupValue: displayedSelectedOption,
-                title: 'Reuse existing pages and don\'t store new pages',
-                description: 'For every visited page, the crawler checks whether it is in the Snapshot already. If it is, content is Scanned from the stored page. If it isn\'t, the page is Scanned from the remote.',
-                onChanged: (value) {
-                  if (value != null && _useSnapshot) {
-                    setState(() {
-                      _selectedOption = value;
-                      _updateConfig();
-                    });
-                  }
-                },
-                isEnabled: _useSnapshot,
-              ),
-              
-              const SizedBox(height: 8),
-              
-              // Option 3: Don't reuse existing pages
-              _buildRadioOption(
-                value: 2,
-                groupValue: displayedSelectedOption,
-                title: 'Don\'t reuse existing pages, update/store all encountered pages',
-                description: 'For every visited page, the crawler checks whether it is in the Snapshot already. If it is, the page is updated. If it isn\'t, the new page is added. This option doesn\'t affect pages that aren\'t visited during the crawl.',
-                onChanged: (value) {
-                  if (value != null && _useSnapshot) {
-                    setState(() {
-                      _selectedOption = value;
-                      _updateConfig();
-                    });
-                  }
-                },
-                isEnabled: _useSnapshot,
-              ),
-              
-              // Message for updating resource collection settings
-              if (_showUpdateResourceMessage) ...[
+                
+                // Snapshot selection dropdown - always visible but grayed out when toggle is off
                 const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0F7FF),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: const Color(0xFFCBE2FF)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.info_outline,
-                        color: Color(0xFF37618E),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Would you like to update resource collection settings to match the selected snapshot?',
-                          style: GoogleFonts.roboto(
-                            fontSize: 14,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: _updateResourceSettings,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF37618E),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          'Update',
-                          style: GoogleFonts.roboto(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
+                Text(
+                  'Select snapshot to use:',
+                  style: GoogleFonts.roboto(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
                   ),
                 ),
+                const SizedBox(height: 8),
+                Container(
+                  width: containerWidth,
+                  child: DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                    ),
+                    value: availableSnapshots.first,
+                    items: availableSnapshots.map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(
+                          value,
+                          style: GoogleFonts.roboto(
+                            fontWeight: FontWeight.normal,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          widget.config.selectedSnapshot = newValue;
+                          _updateConfig();
+                        });
+                      }
+                    }
+                  ),
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // How should new pages be handled section
+                Text(
+                  'How should new pages be handled?',
+                  style: headerStyle,
+                ),
+                const SizedBox(height: 16),
+                
+                // Option 1: Reuse existing pages and store new pages
+                _buildRadioOption(
+                  value: 0,
+                  groupValue: displayedSelectedOption,
+                  title: 'Reuse existing pages and store new pages',
+                  description: 'For every visited page, the crawler checks whether it is in the Snapshot already. If it isn\'t, it adds it. This option doesn\'t update existing pages in the Snapshot.',
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedOption = value;
+                        _updateConfig();
+                      });
+                    }
+                  },
+                  isEnabled: true,
+                ),
+                
+                const SizedBox(height: 8),
+                
+                // Option 2: Reuse existing pages but don't store new ones
+                _buildRadioOption(
+                  value: 1,
+                  groupValue: displayedSelectedOption,
+                  title: 'Reuse existing pages and don\'t store new pages',
+                  description: 'For every visited page, the crawler checks whether it is in the Snapshot already. If it is, content is Scanned from the stored page. If it isn\'t, the page is Scanned from the remote.',
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedOption = value;
+                        _updateConfig();
+                      });
+                    }
+                  },
+                  isEnabled: true,
+                ),
+                
+                const SizedBox(height: 8),
+                
+                // Option 3: Don't reuse existing pages
+                _buildRadioOption(
+                  value: 2,
+                  groupValue: displayedSelectedOption,
+                  title: 'Don\'t reuse existing pages, update/store all encountered pages',
+                  description: 'For every visited page, the crawler checks whether it is in the Snapshot already. If it is, the page is updated. If it isn\'t, the new page is added. This option doesn\'t affect pages that aren\'t visited during the crawl.',
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedOption = value;
+                        _updateConfig();
+                      });
+                    }
+                  },
+                  isEnabled: true,
+                ),
+                
+                // Message for updating resource collection settings
+                if (_showUpdateResourceMessage) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0F7FF),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: const Color(0xFFCBE2FF)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.info_outline,
+                          color: Color(0xFF37618E),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Would you like to update resource collection settings to match the selected snapshot?',
+                            style: GoogleFonts.roboto(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton(
+                          onPressed: _updateResourceSettings,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF37618E),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            'Update',
+                            style: GoogleFonts.roboto(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ],
           ),

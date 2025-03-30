@@ -2,30 +2,33 @@ import 'package:flutter/material.dart';
 
 class InformationTooltip extends StatelessWidget {
   final String message;
+  final double iconSize;
+  final EdgeInsetsGeometry padding;
 
-  const InformationTooltip({super.key, required this.message});
+  const InformationTooltip({
+    super.key,
+    required this.message,
+    this.iconSize = 16,
+    this.padding = EdgeInsets.zero,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: message,
-      preferBelow: true,
-      showDuration: const Duration(seconds: 3),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+    return Padding(
+      padding: padding,
+      child: Tooltip(
+        message: message,
+        textStyle: const TextStyle(color: Colors.white, fontSize: 14),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade700,  // Consistent gray background
+          borderRadius: BorderRadius.circular(4),
         ),
-      ),
-      textStyle: TextStyle(
-        color: Theme.of(context).colorScheme.onSurface,
-        fontSize: 12,
-      ),
-      child: Icon(
-        Icons.info_outline,
-        size: 16,
-        color: Theme.of(context).colorScheme.primary,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Icon(
+          Icons.info_outline,
+          size: iconSize,
+          color: Colors.grey.shade600,
+        ),
       ),
     );
   }
