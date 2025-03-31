@@ -30,9 +30,12 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
   // Whether to use snapshot from previous crawl
   bool _useSnapshot = false;
   
-  // For admin only translation target snapshot
+  // For translation target snapshot
   bool _useTranslationTarget = false;
-  bool _buildLocalCache = false;
+  
+  // Track policy and language selections
+  String? _selectedPolicy;
+  String? _selectedLanguage;
   
   // Whether the current user is an admin
   final bool _isAdmin = true;
@@ -43,10 +46,9 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
   @override
   void initState() {
     super.initState();
-    // Ensure toggle is off by default and no snapshot options are selected
+    // Initialize with snapshots turned off by default
     _useSnapshot = false;
     _selectedOption = -1; // No option selected by default
-    widget.config.snapshotOption = SnapshotOption.rebuildAll;
   }
 
   void _updateConfig() {
@@ -59,6 +61,8 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
       }
     } else {
       widget.config.snapshotOption = SnapshotOption.rebuildAll;
+      widget.config.storeNewPages = false;
+      _selectedOption = -1; // Reset selected option when turned off
     }
     
     // Show resource settings message only when toggle is on and options 0 or 2 are selected
@@ -110,7 +114,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
       children: [
         // Title and description
         Text(
-          'Origin snapshots',
+          'Snapshots',
           style: GoogleFonts.roboto(
             fontSize: 24,
             fontWeight: FontWeight.w500,
@@ -119,7 +123,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Configure how to handle content changes since the last crawl',
+          'Snapshots let you store and later serve the source site\'s contents in a fixed state: as they\'re encountered during this crawl. The snapshot contents will not change even if the original site updates until you update them in a future crawl.',
           style: GoogleFonts.roboto(
             fontSize: 14,
             color: Colors.black87,
@@ -147,7 +151,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                     child: Row(
                       children: [
                         Text(
-                          'Use snapshot from previous crawl',
+                          'Origin snapshot',
                           style: headerStyle,
                         ),
                         const SizedBox(width: 8),
@@ -164,6 +168,11 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                           if (value) {
                             // When turned on, ensure no option is selected initially
                             _selectedOption = -1;
+                          } else {
+                            // When turned off, reset all related settings
+                            widget.config.snapshotOption = SnapshotOption.rebuildAll;
+                            widget.config.storeNewPages = false;
+                            _selectedOption = -1;
                           }
                           _updateConfig();
                         });
@@ -178,16 +187,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
               if (_useSnapshot) ...[
                 const SizedBox(height: 4),
                 
-                // Description text
-                Text(
-                  'Compare content with a previous crawl to detect changes',
-                  style: GoogleFonts.roboto(
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                ),
-                
-                // Snapshot selection dropdown - always visible but grayed out when toggle is off
+                // Snapshot selection dropdown
                 const SizedBox(height: 16),
                 Text(
                   'Select snapshot to use:',
@@ -235,19 +235,12 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                 
                 const SizedBox(height: 24),
                 
-                // How should new pages be handled section
-                Text(
-                  'How should new pages be handled?',
-                  style: headerStyle,
-                ),
-                const SizedBox(height: 16),
-                
-                // Option 1: Reuse existing pages and store new pages
+                // Add back radio options with modern Material Design 3 styling
                 _buildRadioOption(
                   value: 0,
-                  groupValue: displayedSelectedOption,
+                  groupValue: _selectedOption,
                   title: 'Reuse existing pages and store new pages',
-                  description: 'For every visited page, the crawler checks whether it is in the Snapshot already. If it isn\'t, it adds it. This option doesn\'t update existing pages in the Snapshot.',
+                  description: 'Keeps existing pages in the Snapshot unchanged and adds any new pages found during the crawl.',
                   onChanged: (value) {
                     if (value != null) {
                       setState(() {
@@ -261,12 +254,11 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                 
                 const SizedBox(height: 8),
                 
-                // Option 2: Reuse existing pages but don't store new ones
                 _buildRadioOption(
                   value: 1,
-                  groupValue: displayedSelectedOption,
+                  groupValue: _selectedOption,
                   title: 'Reuse existing pages and don\'t store new pages',
-                  description: 'For every visited page, the crawler checks whether it is in the Snapshot already. If it is, content is Scanned from the stored page. If it isn\'t, the page is Scanned from the remote.',
+                  description: 'Uses existing pages from the Snapshot without adding new pages. Pages not in the Snapshot are crawled but not stored.',
                   onChanged: (value) {
                     if (value != null) {
                       setState(() {
@@ -280,12 +272,11 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                 
                 const SizedBox(height: 8),
                 
-                // Option 3: Don't reuse existing pages
                 _buildRadioOption(
                   value: 2,
-                  groupValue: displayedSelectedOption,
+                  groupValue: _selectedOption,
                   title: 'Don\'t reuse existing pages, update/store all encountered pages',
-                  description: 'For every visited page, the crawler checks whether it is in the Snapshot already. If it is, the page is updated. If it isn\'t, the new page is added. This option doesn\'t affect pages that aren\'t visited during the crawl.',
+                  description: 'Updates all existing pages and adds new ones. Best for initial snapshots or to capture the current state of the site.',
                   onChanged: (value) {
                     if (value != null) {
                       setState(() {
@@ -332,7 +323,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(20),
                             ),
                             elevation: 0,
                           ),
@@ -353,8 +344,8 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
           ),
         ),
         
-        // Admin only - Translation target snapshot container
-        if (_isAdmin && isScanSelected) ...[
+        // Translation target snapshot container (formerly admin-only)
+        if (isScanSelected) ...[
           const SizedBox(height: 24),
           Container(
             width: containerWidth,
@@ -392,37 +383,171 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Build local cache checkbox
+                
+                // Add the Build local cache label with toggle switch
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: Checkbox(
-                        value: _buildLocalCache,
-                        onChanged: (value) {
-                          setState(() {
-                            _buildLocalCache = value!;
-                            _updateConfig();
-                          });
-                        },
-                        activeColor: primaryColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
                     Text(
                       'Build local cache',
                       style: GoogleFonts.roboto(
                         fontSize: 14,
-                        fontWeight: FontWeight.w400,
+                        fontWeight: FontWeight.w500,
                         color: Colors.black87,
+                      ),
+                    ),
+                    Transform.scale(
+                      scale: 0.8,
+                      child: Switch(
+                        value: widget.config.buildLocalCache,
+                        onChanged: (value) {
+                          setState(() {
+                            widget.config.buildLocalCache = value;
+                            _updateConfig();
+                          });
+                        },
+                        activeColor: primaryColor,
                       ),
                     ),
                   ],
                 ),
+                
+                // Show policy selector and language dropdown when toggle is on
+                if (widget.config.buildLocalCache) ...[
+                  const SizedBox(height: 16),
+                  // Language selection dropdown (example with Hungarian)
+                  Container(
+                    width: containerWidth,
+                    child: DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                      ),
+                      value: 'Hungarian (Hungary) [hu-HU]',
+                      items: ['Hungarian (Hungary) [hu-HU]'].map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 24,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  border: Border(
+                                    top: BorderSide(color: Colors.white, width: 1),
+                                    bottom: BorderSide(color: Colors.green, width: 1),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                value,
+                                style: GoogleFonts.roboto(
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (newValue) {
+                        // Handle language selection
+                        setState(() {
+                          _selectedLanguage = newValue;
+                        });
+                      },
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Policy selection dropdown
+                  Text(
+                    'Select a policy',
+                    style: GoogleFonts.roboto(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: containerWidth,
+                    child: DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        hintText: 'Select a policy',
+                      ),
+                      items: [
+                        'None',
+                        'Never overwrite',
+                        'Overwrite if better',
+                        'Always overwrite'
+                      ].map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(
+                            value,
+                            style: GoogleFonts.roboto(
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (newValue) {
+                        // Handle policy selection
+                        setState(() {
+                          _selectedPolicy = newValue;
+                        });
+                      },
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Warning message as an informational help text - show only if selections are incomplete
+                  if (_selectedPolicy == null || _selectedLanguage == null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0F7FF),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: const Color(0xFFCBE2FF)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Color(0xFF37618E),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Select both a target language and a policy to enable local cache building.',
+                            style: GoogleFonts.roboto(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -439,41 +564,44 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
     required ValueChanged<int?> onChanged,
     required bool isEnabled,
   }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Radio<int>(
-          value: value,
-          groupValue: groupValue,
-          onChanged: isEnabled ? onChanged : null,
-          activeColor: const Color(0xFF37618E),
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: GoogleFonts.roboto(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: isEnabled ? Colors.black87 : Colors.black38,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                description,
-                style: GoogleFonts.roboto(
-                  fontSize: 14,
-                  color: isEnabled ? Colors.black54 : Colors.black26,
-                ),
-              ),
-            ],
+    return GestureDetector(
+      onTap: isEnabled ? () => onChanged(value) : null,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Radio<int>(
+            value: value,
+            groupValue: groupValue,
+            onChanged: isEnabled ? onChanged : null,
+            activeColor: const Color(0xFF37618E),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-        ),
-      ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.roboto(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isEnabled ? Colors.black87 : Colors.black38,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: GoogleFonts.roboto(
+                    fontSize: 14,
+                    color: isEnabled ? Colors.black54 : Colors.black26,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

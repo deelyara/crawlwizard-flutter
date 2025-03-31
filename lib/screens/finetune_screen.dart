@@ -19,9 +19,9 @@ class FinetuneScreen extends StatefulWidget {
 class _FinetuneScreenState extends State<FinetuneScreen> {
   // Expansion panel states
   bool _isResourcesExpanded = true;
-  bool _isTweaksExpanded = false;
-  bool _isWorkPackageExpanded = false;
-  bool _isMiscExpanded = false;
+  bool _isTweaksExpanded = true;
+  bool _isWorkPackageExpanded = true;
+  bool _isMiscExpanded = true;
   
   // Simultaneous requests value
   final TextEditingController _requestsController = TextEditingController();
@@ -192,7 +192,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                   ),
                 ),
         
-        const SizedBox(height: 16),
+        const SizedBox(height: 32),
         
         // Tweaks section
         _buildExpandableSection(
@@ -270,7 +270,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                       controller: _requestsController,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12,
@@ -297,7 +297,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
         
         // Work package section (only show when scan is selected)
         if (isScanSelected) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: 32),
           
           _buildExpandableSection(
             title: 'Work package',
@@ -340,7 +340,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                         controller: _entriesController,
                         decoration: InputDecoration(
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -366,7 +366,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
           ),
         ],
         
-        const SizedBox(height: 16),
+        const SizedBox(height: 32),
         
         // Miscellaneous section
         _buildExpandableSection(
@@ -399,7 +399,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                 controller: _userAgentController,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -432,13 +432,13 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                 controller: _sessionCookieController,
                         decoration: InputDecoration(
                           border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                ),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
                         onChanged: (value) {
                           setState(() {
                             widget.config.sessionCookie = value;
@@ -471,7 +471,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                 controller: _bearerTokenController,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -497,7 +497,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
       width: MediaQuery.of(context).size.width - 48,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: Column(
@@ -506,7 +506,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
           // Header
           InkWell(
             onTap: onToggle,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(

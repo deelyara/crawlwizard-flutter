@@ -138,10 +138,14 @@ class AppTheme {
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: primaryColor, width: 2),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       isDense: true,

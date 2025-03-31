@@ -181,12 +181,20 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
               },
               activeColor: primaryColor,
             ),
-            Text(
-              'Custom...',
-              style: GoogleFonts.roboto(
-                fontSize: 14,
-                fontWeight: FontWeight.normal,
-                color: Colors.black87,
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  widget.config.recurrenceFrequency = RecurrenceFrequency.custom;
+                  widget.onConfigUpdate();
+                });
+              },
+              child: Text(
+                'Every...',
+                style: GoogleFonts.roboto(
+                  fontSize: 14,
+                  fontWeight: FontWeight.normal,
+                  color: Colors.black87,
+                ),
               ),
             ),
             const SizedBox(width: 8),
@@ -237,8 +245,8 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
           ),
         ],
         
-        // Admin-only first scheduled crawl date selection without container
-        if (_isAdmin && widget.config.recurrenceFrequency != RecurrenceFrequency.none) ...[
+        // First scheduled crawl date selection without container
+        if (widget.config.recurrenceFrequency != RecurrenceFrequency.none) ...[
           const SizedBox(height: 24),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -333,28 +341,36 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
     
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        children: [
-          Radio<RecurrenceFrequency>(
-            value: value,
-            groupValue: widget.config.recurrenceFrequency,
-            onChanged: (value) {
-              setState(() {
-                widget.config.recurrenceFrequency = value!;
-                widget.onConfigUpdate();
-              });
-            },
-            activeColor: primaryColor,
-          ),
-          Text(
-            title,
-            style: GoogleFonts.roboto(
-              fontSize: 14,
-              fontWeight: FontWeight.normal,
-              color: Colors.black87,
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            widget.config.recurrenceFrequency = value;
+            widget.onConfigUpdate();
+          });
+        },
+        child: Row(
+          children: [
+            Radio<RecurrenceFrequency>(
+              value: value,
+              groupValue: widget.config.recurrenceFrequency,
+              onChanged: (value) {
+                setState(() {
+                  widget.config.recurrenceFrequency = value!;
+                  widget.onConfigUpdate();
+                });
+              },
+              activeColor: primaryColor,
             ),
-          ),
-        ],
+            Text(
+              title,
+              style: GoogleFonts.roboto(
+                fontSize: 14,
+                fontWeight: FontWeight.normal,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -35,7 +35,7 @@ class _WizardModalState extends State<WizardModal> {
     'Select type',
     'Set scope',
     'Set restrictions',
-    'Origin snapshot',
+    'Snapshots',
     'Fine-tune',
     'Recurrence',
     'Review',
@@ -156,10 +156,10 @@ class _WizardModalState extends State<WizardModal> {
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.all(24),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(28),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(28),
       child: ConstrainedBox(
         constraints: const BoxConstraints(
           maxWidth: 900,
@@ -353,7 +353,7 @@ class _WizardModalState extends State<WizardModal> {
                             ),
                           ),
                           child: Text(
-                            _currentStep == _stepTitles.length - 1 ? 'Start crawl' : 'Next',
+                            _currentStep == _stepTitles.length - 1 ? 'Start crawl!' : 'Next',
                             style: GoogleFonts.roboto(
                               fontSize: 14,
                               fontWeight: FontWeight.w400,

@@ -208,7 +208,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: isDisabled ? Colors.grey.shade200 : chipColor,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -294,7 +294,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.grey.shade300),
             ),
             child: Column(
@@ -376,7 +376,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: Colors.grey.shade300),
           ),
             child: Column(
@@ -441,7 +441,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                         decoration: InputDecoration(
                           hintText: 'Path prefix rule, e.g., /blog, /news/, /fr/',
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -589,7 +589,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: Colors.grey.shade300),
           ),
           child: Column(
@@ -621,7 +621,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                         decoration: InputDecoration(
                           hintText: 'e.g /_el/dashboard/project/.*/crawl-wizard',
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -679,7 +679,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: const Color(0xFFCBDCF6),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
                       children: [

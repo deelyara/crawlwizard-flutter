@@ -281,13 +281,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
         crawlTypeText = 'Discovery crawl';
         break;
       case CrawlType.contentExtraction:
-        crawlTypeText = 'Content extraction (Scan)';
+        crawlTypeText = 'Content extraction';
         break;
       case CrawlType.newContentDetection:
         crawlTypeText = 'New content detection';
         break;
       case CrawlType.tlsContentExtraction:
-        crawlTypeText = 'TLS Content extraction (Scan)';
+        crawlTypeText = 'Target language specific (TLS) content extraction';
         break;
       case null: // This should never be reached due to the if check above
         crawlTypeText = 'No type selected';
@@ -631,20 +631,19 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   Widget _buildSnapshotContent(BuildContext context) {
     String snapshotText = '';
+    bool useSnapshot = widget.config.snapshotOption != SnapshotOption.rebuildAll;
 
-    switch (widget.config.snapshotOption) {
-      case SnapshotOption.useExisting:
-        snapshotText = 'Use existing snapshot';
-        break;
-      case SnapshotOption.compareContent:
-        snapshotText = 'Compare content with previous crawl';
-        break;
-      case SnapshotOption.rebuildAll:
-        snapshotText = 'Extract content from all pages';
-        break;
-      case SnapshotOption.createNew:
-        snapshotText = 'Create new snapshot';
-        break;
+    // Use the original option titles from the snapshot screen based on the selected option and storeNewPages value
+    if (useSnapshot) {
+      // Option 1 or 2 was selected
+      if (widget.config.storeNewPages) {
+        snapshotText = 'Reuse existing pages and store new pages';
+      } else {
+        snapshotText = 'Reuse existing pages and don\'t store new pages';
+      }
+    } else {
+      // Option 3 was selected
+      snapshotText = 'Don\'t reuse existing pages, update/store all encountered pages';
     }
 
     return Padding(
@@ -656,21 +655,17 @@ class _ReviewScreenState extends State<ReviewScreen> {
             snapshotText,
             style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
           ),
-        if (widget.config.snapshotOption != SnapshotOption.rebuildAll) ...[
-          const SizedBox(height: 8),
-          Text(
-            widget.config.storeNewPages
-                ? 'New pages will be added to the snapshot'
-                : 'New pages will be ignored',
-              style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
-          ),
-        ],
-        if (widget.config.selectedSnapshot.isNotEmpty &&
-            (widget.config.snapshotOption == SnapshotOption.useExisting ||
-                widget.config.snapshotOption == SnapshotOption.compareContent)) ...[
+        if (widget.config.selectedSnapshot.isNotEmpty && useSnapshot) ...[
           const SizedBox(height: 8),
             Text(
               'Selected snapshot: ${widget.config.selectedSnapshot}',
+              style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+            ),
+          ],
+        if (widget.config.buildLocalCache) ...[
+          const SizedBox(height: 8),
+            Text(
+              'Build local cache: Yes',
               style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
             ),
           ],

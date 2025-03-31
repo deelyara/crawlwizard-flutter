@@ -17,6 +17,7 @@ class CrawlConfig {
   // Type step
   CrawlType? crawlType;
   bool prerenderPages = false;
+  bool useCrest = false;
 
   // Scope step
   CrawlScope? crawlScope;
@@ -35,6 +36,7 @@ class CrawlConfig {
   SnapshotOption snapshotOption = SnapshotOption.useExisting;
   String selectedSnapshot = '';
   bool storeNewPages = true;
+  bool buildLocalCache = false;
 
   // Fine-tune step
   bool collectHtmlPages = true;

@@ -12,7 +12,7 @@ class TypeScreen extends StatefulWidget {
     required this.config,
     required this.onConfigUpdate,
   });
-  
+
   @override
   State<TypeScreen> createState() => _TypeScreenState();
 }
@@ -122,6 +122,10 @@ class _TypeScreenState extends State<TypeScreen> {
                   onChanged: (value) {
                     setState(() {
                       widget.config.prerenderPages = value!;
+                      // If prerender is unchecked, also uncheck "Use Crest"
+                      if (!value && widget.config.useCrest) {
+                        widget.config.useCrest = false;
+                      }
                       widget.onConfigUpdate();
                     });
                   },
@@ -168,8 +172,15 @@ class _TypeScreenState extends State<TypeScreen> {
               Transform.scale(
                 scale: 1.1,
                 child: Checkbox(
-                  value: false, // This would be controlled by a config value
-                  onChanged: null, // Disabled for non-admin users
+                  value: widget.config.useCrest,
+                  onChanged: widget.config.prerenderPages 
+                    ? (value) {
+                        setState(() {
+                          widget.config.useCrest = value!;
+                          widget.onConfigUpdate();
+                        });
+                      }
+                    : null, // Disable checkbox if prerender is not selected
                   activeColor: primaryColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(2),
@@ -185,7 +196,7 @@ class _TypeScreenState extends State<TypeScreen> {
                       style: GoogleFonts.roboto(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
-                        color: Colors.black45,
+                        color: widget.config.prerenderPages ? Colors.black87 : Colors.black45,
                       ),
                     ),
                     const SizedBox(width: 8),
