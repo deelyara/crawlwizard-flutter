@@ -139,9 +139,23 @@ class _WizardModalState extends State<WizardModal> {
   bool _isCurrentStepValid() {
     switch (_currentStep) {
       case 0: // Type screen
-        return _config.crawlType != null;
+        if (_config.crawlType == null) return false;
+        
+        // For TLS crawl type, ensure at least one language is selected
+        if (_config.crawlType == CrawlType.tlsContentExtraction) {
+          return _config.targetLanguages.isNotEmpty || _config.crawlWithoutTargetLanguage;
+        }
+        return true;
+        
       case 1: // Scope screen
-        return _config.crawlScope != null;
+        if (_config.crawlScope == null) return false;
+        
+        // For specific pages or sitemap, require URLs to be provided
+        if (_config.crawlScope == CrawlScope.specificPages || 
+            _config.crawlScope == CrawlScope.sitemapPages) {
+          return _config.specificUrls.isNotEmpty;
+        }
+        return true;
       default:
         return true; // Other steps are optional
     }
@@ -196,7 +210,7 @@ class _WizardModalState extends State<WizardModal> {
             ),
             
               // Divider
-              const Divider(height: 1, thickness: 1),
+              Divider(height: 1, thickness: 1, color: Colors.grey.shade300),
               
               // Main content with step indicator on left side
               Expanded(
@@ -220,8 +234,8 @@ class _WizardModalState extends State<WizardModal> {
                     Container(
                       width: 1,
                       margin: const EdgeInsets.only(top: 1, bottom: 1),
-                      color: Colors.grey.shade200,
-            ),
+                      color: Colors.grey.shade300,
+                    ),
             
             // Main content area
             Expanded(
@@ -235,7 +249,11 @@ class _WizardModalState extends State<WizardModal> {
               ),
               
               // Divider before navigation
-              const Divider(height: 1, thickness: 1),
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: Colors.grey.shade300,
+              ),
               
               // New full-width navigation bar
               Container(
@@ -277,8 +295,8 @@ class _WizardModalState extends State<WizardModal> {
                             style: TextButton.styleFrom(
                               foregroundColor: primaryColor,
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
+                                horizontal: 24,
+                                vertical: 10,
                               ),
                             ),
                             child: Text(
@@ -290,15 +308,15 @@ class _WizardModalState extends State<WizardModal> {
                             ),
                           ),
                         
-                        // Skip to review button (from step 3 onwards, unless already in review)
-                        if (_currentStep >= 2 && _currentStep < 6 && !_fromReviewStep)
+                        // Skip to review button
+                        if (_currentStep >= 1 && _currentStep < 6 && !_fromReviewStep)
                           TextButton(
                             onPressed: _skipToReview,
                             style: TextButton.styleFrom(
                               foregroundColor: primaryColor,
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
+                                horizontal: 24,
+                                vertical: 10,
                               ),
                             ),
                             child: Text(
@@ -310,46 +328,27 @@ class _WizardModalState extends State<WizardModal> {
                             ),
                           ),
                         
-                        // Back to Review button (if editing from review)
-                        if (_fromReviewStep)
-                          TextButton(
-                            onPressed: _navigateToReview,
-                            style: TextButton.styleFrom(
-                              foregroundColor: primaryColor,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                            ),
-                            child: Text(
-                              'Back to review',
-                              style: GoogleFonts.roboto(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                          
                         // Small spacing between buttons
                         const SizedBox(width: 8),
                         
-                        // Next button
+                        // Next/Start crawl button
                         ElevatedButton(
                           onPressed: _currentStep == _stepTitles.length - 1 
                               ? _handleComplete 
                               : _isCurrentStepValid() 
                                   ? _nextStep 
-                                  : null, // Disable if current step is invalid
+                                  : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,
                             foregroundColor: Colors.white,
-                            disabledBackgroundColor: Colors.grey.shade300, // Add disabled color
+                            disabledBackgroundColor: Colors.grey.shade300,
+                            minimumSize: const Size(120, 40),
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 32,
-                              vertical: 12,
+                              horizontal: 24,
+                              vertical: 10,
                             ),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24),
+                              borderRadius: BorderRadius.circular(20),
                             ),
                           ),
                           child: Text(
@@ -403,6 +402,7 @@ class _WizardModalState extends State<WizardModal> {
         return RecurrenceScreen(
           config: _config,
           onConfigUpdate: () => setState(() {}),
+          onEditStep: _navigateToStep,
         );
       case 6:
         return ReviewScreen(

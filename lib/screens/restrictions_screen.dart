@@ -93,20 +93,23 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
     return null;
   }
 
-  // Add a new restriction based on the current mode
+  // Update the validation method to be more specific
+  bool _validatePrefixInput(String value) {
+    if (value.isEmpty) return true;
+    return value.startsWith('/');
+  }
+
+  // Update the add restriction method to use the validation
   void _addRestriction() {
     final value = _restrictionController.text.trim();
     if (value.isEmpty) return;
     
-    final error = _validatePrefix(value);
-    if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error)),
-      );
+    if (!_validatePrefixInput(value)) {
+      setState(() {}); // Show error state
       return;
     }
     
-      setState(() {
+    setState(() {
       // Handle comma-separated values
       final prefixes = value.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
       
@@ -120,7 +123,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
     });
     
     // Update the config
-      widget.onConfigUpdate();
+    widget.onConfigUpdate();
   }
 
   // Remove a temporary restriction
@@ -208,7 +211,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: isDisabled ? Colors.grey.shade200 : chipColor,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -432,83 +435,91 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
               // Restriction input field with validation
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                    child: SizedBox(
-                      height: 40,
-                      child: TextField(
-                        controller: _restrictionController,
-                        decoration: InputDecoration(
-                          hintText: 'Path prefix rule, e.g., /blog, /news/, /fr/',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SizedBox(
+                          height: 40,
+                          child: TextField(
+                            controller: _restrictionController,
+                            decoration: InputDecoration(
+                              hintText: 'Path prefix rule, e.g., /blog, /news/, /fr/',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                              ),
+                              errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
+                              ),
+                              focusedErrorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              isDense: true,
+                              errorText: _validatePrefixInput(_restrictionController.text) ? null : 'Must start with /',
+                              errorStyle: GoogleFonts.roboto(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.error,
+                                height: 1,
+                              ),
+                            ),
+                            onSubmitted: (_) => _addRestriction(),
+                            onChanged: (value) {
+                              setState(() {});
+                            },
                           ),
                         ),
-                        onSubmitted: (_) => _addRestriction(),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    height: 40,
+                    child: ElevatedButton(
+                      onPressed: _addRestriction,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(88, 40),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: Text(
+                        'Add',
+                        style: GoogleFonts.roboto(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: _addRestriction,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    child: const Text('Add'),
                   ),
                 ],
               ),
               
-              // Switch to make temporary restrictions permanent - made smaller with custom constraints
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  SizedBox(
-                    height: 24, // Smaller height
-                    width: 40, // Smaller width
-                    child: Transform.scale(
-                      scale: 0.8, // Scale down the switch
-                      child: Switch(
-                        value: _makePermanent,
-                        onChanged: (value) {
-                          setState(() {
-                            _makePermanent = value;
-                          });
-                        },
-                        activeColor: primaryColor,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Add these temporary restrictions to the project settings permanently',
-                      style: GoogleFonts.roboto(
-                        fontSize: 14,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    ),
-                  ],
-                ),
-
               // Temporary restrictions section (only show if there are temporary restrictions)
               if (_tempIncludePrefixes.isNotEmpty || _tempExcludePrefixes.isNotEmpty) ...[
                 const SizedBox(height: 24),
-                const Divider(height: 1),
+                Divider(color: Colors.grey.shade300, height: 1),
                 const SizedBox(height: 24),
                 
                 Text(
@@ -525,7 +536,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                     color: Colors.black87,
                   ),
                 ),
-                  const SizedBox(height: 16),
+                const SizedBox(height: 16),
                 
                 // Temporary crawl pages starting with
                 if (_tempIncludePrefixes.isNotEmpty) ...[
@@ -558,7 +569,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                     "Don't crawl pages starting with:",
                     style: GoogleFonts.roboto(
                       fontSize: 14,
-                          fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w500,
                       color: Colors.black87,
                     ),
                   ),
@@ -575,6 +586,40 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                     }).toList(),
                   ),
                 ],
+                
+                // Move the toggle switch here - after the chips display
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    SizedBox(
+                      height: 24, // Smaller height
+                      width: 40, // Smaller width
+                      child: Transform.scale(
+                        scale: 0.8, // Scale down the switch
+                        child: Switch(
+                          value: _makePermanent,
+                          onChanged: (value) {
+                            setState(() {
+                              _makePermanent = value;
+                            });
+                          },
+                          activeColor: primaryColor,
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Add these temporary restrictions to the project settings permanently',
+                        style: GoogleFonts.roboto(
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ],
           ),
@@ -611,45 +656,70 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
               
               // Regex input field
               Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                    child: SizedBox(
-                      height: 40,
-                      child: TextField(
-                        controller: _regexController,
-                        decoration: InputDecoration(
-                          hintText: 'e.g /_el/dashboard/project/.*/crawl-wizard',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SizedBox(
+                          height: 40,
+                          child: TextField(
+                            controller: _regexController,
+                            decoration: InputDecoration(
+                              hintText: 'e.g /_el/dashboard/project/.*/crawl-wizard',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              isDense: true,
+                            ),
+                            onSubmitted: (_) => _addRegexRestriction(),
                           ),
                         ),
-                        onSubmitted: (_) => _addRegexRestriction(),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    height: 40,
+                    child: ElevatedButton(
+                      onPressed: _addRegexRestriction,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(88, 40),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: Text(
+                        'Add',
+                        style: GoogleFonts.roboto(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: _addRegexRestriction,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    child: const Text('Add'),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
 
               // Regular expression restrictions list
               if (_regexRestrictions.isNotEmpty) ...[
@@ -684,7 +754,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                     child: Row(
                       children: [
                         Expanded(
-                          child: Text(
+                          child: SelectableText(
                             _regexRestrictions[index],
                             style: GoogleFonts.robotoMono(
                               color: const Color(0xFF191C20),

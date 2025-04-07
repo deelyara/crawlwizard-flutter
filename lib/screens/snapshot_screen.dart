@@ -113,23 +113,78 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Title and description
-        Text(
-          'Snapshots',
-          style: GoogleFonts.roboto(
-            fontSize: 24,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Snapshots',
+              style: GoogleFonts.roboto(
+                fontSize: 24,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+            // Reload button in header
+            TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  // Reset to initial state
+                  _useSnapshot = false;
+                  _selectedOption = -1;
+                  widget.config.snapshotOption = SnapshotOption.rebuildAll;
+                  widget.config.storeNewPages = false;
+                  _updateConfig();
+                });
+              },
+              icon: const Icon(Icons.refresh, size: 18),
+              label: Text(
+                'Reload this step',
+                style: GoogleFonts.roboto(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 12,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         Text(
-          'Snapshots let you store and later serve the source site\'s contents in a fixed state: as they\'re encountered during this crawl. The snapshot contents will not change even if the original site updates until you update them in a future crawl.',
+          'Snapshots store and serve source website content exactly as captured during crawling, unchanged until you run a new crawl to update it.',
           style: GoogleFonts.roboto(
             fontSize: 14,
             color: Colors.black87,
           ),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 16),
+        
+        // Manage snapshots button
+        TextButton.icon(
+          onPressed: _openSnapshotConfiguration,
+          icon: const Icon(Icons.launch, size: 18),
+          label: Text(
+            'Manage snapshots',
+            style: GoogleFonts.roboto(
+              fontSize: 16,
+              height: 1.4285,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.only(
+              top: 10,
+              bottom: 10,
+              left: 12,
+              right: 16,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
         
         // Main container with snapshot options
         Container(
@@ -361,7 +416,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                 Row(
                   children: [
                     Text(
-                      'Translation target snapshot',
+                      'Translation (target) snapshot',
                       style: headerStyle,
                     ),
                     const SizedBox(width: 8),
@@ -415,6 +470,18 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                 // Show policy selector and language dropdown when toggle is on
                 if (widget.config.buildLocalCache) ...[
                   const SizedBox(height: 16),
+                  
+                  // Target language header
+                  Text(
+                    'Select target language',
+                    style: GoogleFonts.roboto(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  
                   // Language selection dropdown (example with Hungarian)
                   Container(
                     width: containerWidth,
@@ -469,7 +536,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                   
                   // Policy selection dropdown
                   Text(
-                    'Select a policy',
+                    'Select policy',
                     style: GoogleFonts.roboto(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -522,16 +589,16 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF0F7FF),
+                      color: const Color(0xFFFFF7ED), // Warning background color
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: const Color(0xFFCBE2FF)),
+                      border: Border.all(color: const Color(0xFFFFECD1)), // Warning border color
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(
-                          Icons.info_outline,
-                          color: Color(0xFF37618E),
+                          Icons.warning_amber_rounded, // Triangle warning icon
+                          color: Color(0xFFDC6803), // Warning icon color
                           size: 20,
                         ),
                         const SizedBox(width: 12),

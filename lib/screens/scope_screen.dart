@@ -33,13 +33,38 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
   late TextEditingController _specificUrlsController;
   late TextEditingController _sitemapUrlsController;
 
+  bool get canProceed {
+    if (widget.config.crawlScope == null) return false;
+    
+    switch (widget.config.crawlScope) {
+      case CrawlScope.specificPages:
+        return widget.config.specificUrls.isNotEmpty;
+      case CrawlScope.sitemapPages:
+        return widget.config.specificUrls.isNotEmpty;
+      default:
+        return true;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _pageLimitController = TextEditingController(text: widget.config.pageLimit.toString());
     _maxDepthController = TextEditingController();
-    _specificUrlsController = TextEditingController();
-    _sitemapUrlsController = TextEditingController();
+    
+    // Initialize specificUrlsController with existing URLs if available
+    _specificUrlsController = TextEditingController(
+      text: widget.config.crawlScope == CrawlScope.specificPages && widget.config.specificUrls.isNotEmpty
+          ? widget.config.specificUrls.join('\n')
+          : ''
+    );
+    
+    // Initialize sitemapUrlsController with existing URLs if available
+    _sitemapUrlsController = TextEditingController(
+      text: widget.config.crawlScope == CrawlScope.sitemapPages && widget.config.specificUrls.isNotEmpty
+          ? widget.config.specificUrls.join('\n')
+          : ''
+    );
   }
 
   @override
@@ -261,12 +286,27 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
         // Crawl existing pages option
         _buildRadioOption(
           title: 'Crawl existing pages',
-          subtitle: 'Only crawl pages already in your project',
+          subtitle: 'Crawl only existing pages without finding new ones',
           value: CrawlScope.currentPages,
           groupValue: widget.config.crawlScope,
           onChanged: (value) {
             setState(() {
               widget.config.crawlScope = value;
+              
+              // If currentPages is empty, populate with example URLs
+              if (widget.config.currentPages.isEmpty) {
+                widget.config.currentPages = [
+                  'https://csega.hu/',
+                  'https://csega.hu/intro/',
+                  'https://csega.hu/muvek/',
+                  'https://csega.hu/muvek/kotetek',
+                  'https://csega.hu/muvek/rovid-prozak',
+                  'https://csega.hu/muvek/rovid-prozak/a-tarsulat',
+                  'https://csega.hu/muvek/rovid-prozak/gyogyulas',
+                  'https://csega.hu/muvek/rovid-prozak/hiena'
+                ];
+              }
+              
               widget.onConfigUpdate();
             });
           },
@@ -303,14 +343,15 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
         // Crawl specific pages option
         _buildRadioOption(
           title: 'Crawl specific pages',
-          subtitle: 'Crawl pages based on your URL list',
+          subtitle: 'Crawl only the pages you specify',
           value: CrawlScope.specificPages,
           groupValue: widget.config.crawlScope,
           onChanged: (value) {
             setState(() {
               widget.config.crawlScope = value;
-              // Clear the sitemap flag if it was previously set
-              widget.config.includePrefixes.remove('sitemap');
+              
+              // Remove the auto-population of URLs
+              // If user selects this option, they need to explicitly add URLs
               widget.onConfigUpdate();
             });
           },
@@ -322,28 +363,106 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.only(left: 40, right: 16),
-            child: SizedBox(
-              height: 200, // Fixed height for all containers
-              child: TextField(
-                controller: _specificUrlsController,
-                decoration: InputDecoration(
-                  hintText: 'Add URLs (one per line)\nyour/path\n/your/path\nhttp://example.com/path\nhttps://example.com/path',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 200,
+                  child: TextField(
+                    controller: _specificUrlsController,
+                    decoration: InputDecoration(
+                      hintText: 'Add URLs (one per line)\nyour/path\n/your/path\nhttp://example.com/path\nhttps://example.com/path',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      contentPadding: const EdgeInsets.all(12),
+                      alignLabelWithHint: true,
+                    ),
+                    maxLines: null,
+                    expands: true,
+                    onChanged: (value) {
+                      setState(() {
+                        widget.config.specificUrls = value.split('\n').where((url) => url.trim().isNotEmpty).toList();
+                        widget.onConfigUpdate();
+                      });
+                    },
+                    textAlignVertical: TextAlignVertical.top,
                   ),
-                  contentPadding: const EdgeInsets.all(12),
-                  alignLabelWithHint: true,
                 ),
-                maxLines: null,
-                expands: true,
-                onChanged: (value) {
-                  setState(() {
-                    widget.config.specificUrls = value.split('\n').where((url) => url.trim().isNotEmpty).toList();
-                    widget.onConfigUpdate();
-                  });
-                },
-                textAlignVertical: TextAlignVertical.top,
-              ),
+                const SizedBox(height: 16),
+                CheckboxListTile(
+                  value: widget.config.addUnvisitedUrls,
+                  onChanged: (value) {
+                    setState(() {
+                      widget.config.addUnvisitedUrls = value ?? false;
+                      widget.onConfigUpdate();
+                    });
+                  },
+                  title: Text(
+                    'Also add new URLs not in the list above, if referred, but as "Unvisited"',
+                    style: GoogleFonts.roboto(fontSize: 14),
+                  ),
+                  subtitle: Text(
+                    'Takes precedence over Page Freeze setting',
+                    style: GoogleFonts.roboto(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+                CheckboxListTile(
+                  value: widget.config.collectErrorPages,
+                  onChanged: (value) {
+                    setState(() {
+                      widget.config.collectErrorPages = value ?? true;
+                      widget.onConfigUpdate();
+                    });
+                  },
+                  title: Text(
+                    'Collect error pages (HTTP 4XX)',
+                    style: GoogleFonts.roboto(fontSize: 14),
+                  ),
+                  subtitle: Text(
+                    'Turning this option off will mean no indications of missing pages encountered during crawl are given!',
+                    style: GoogleFonts.roboto(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+                CheckboxListTile(
+                  value: widget.config.collectRedirectionPages,
+                  onChanged: (value) {
+                    setState(() {
+                      widget.config.collectRedirectionPages = value ?? true;
+                      widget.onConfigUpdate();
+                    });
+                  },
+                  title: Text(
+                    'Collect redirection pages (HTTP 3XX)',
+                    style: GoogleFonts.roboto(fontSize: 14),
+                  ),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+                CheckboxListTile(
+                  value: widget.config.autoMarkTranslatable,
+                  onChanged: (value) {
+                    setState(() {
+                      widget.config.autoMarkTranslatable = value ?? true;
+                      widget.onConfigUpdate();
+                    });
+                  },
+                  title: Text(
+                    'Automatically mark visited resources as translatable',
+                    style: GoogleFonts.roboto(fontSize: 14),
+                  ),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+              ],
             ),
           ),
         ],
@@ -370,31 +489,108 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.only(left: 40, right: 16),
-            child: SizedBox(
-              height: 200, // Fixed height for all containers
-                child: TextField(
-                controller: _sitemapUrlsController,
-                  decoration: InputDecoration(
-                  hintText: 'Paste a sitemap index URL, or multiple sitemaps:\nhttps://example.com/sitemap_index.xml\nhttps://example.com/post_sitemap1.xml\nhttps://example.com/page_sitemap2.xml',
-                    border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  contentPadding: const EdgeInsets.all(12),
-                  alignLabelWithHint: true,
-                ),
-                maxLines: null,
-                expands: true,
-                  onChanged: (value) {
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 200,
+                  child: TextField(
+                    controller: _sitemapUrlsController,
+                    decoration: InputDecoration(
+                      hintText: 'Paste a sitemap index URL, or multiple sitemaps:\nhttps://example.com/sitemap_index.xml\nhttps://example.com/post_sitemap1.xml\nhttps://example.com/page_sitemap2.xml',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      contentPadding: const EdgeInsets.all(12),
+                      alignLabelWithHint: true,
+                    ),
+                    maxLines: null,
+                    expands: true,
+                    onChanged: (value) {
                       setState(() {
-                    // Store sitemap URLs
-                    widget.config.specificUrls = value.split('\n')
-                        .where((url) => url.trim().isNotEmpty)
-                        .toList();
+                        widget.config.specificUrls = value.split('\n')
+                            .where((url) => url.trim().isNotEmpty)
+                            .toList();
                         widget.onConfigUpdate();
                       });
-                },
-                textAlignVertical: TextAlignVertical.top,
-              ),
+                    },
+                    textAlignVertical: TextAlignVertical.top,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                CheckboxListTile(
+                  value: widget.config.addUnvisitedUrls,
+                  onChanged: (value) {
+                    setState(() {
+                      widget.config.addUnvisitedUrls = value ?? false;
+                      widget.onConfigUpdate();
+                    });
+                  },
+                  title: Text(
+                    'Also add new URLs not in the list above, if referred, but as "Unvisited"',
+                    style: GoogleFonts.roboto(fontSize: 14),
+                  ),
+                  subtitle: Text(
+                    'Takes precedence over Page Freeze setting',
+                    style: GoogleFonts.roboto(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+                CheckboxListTile(
+                  value: widget.config.collectErrorPages,
+                  onChanged: (value) {
+                    setState(() {
+                      widget.config.collectErrorPages = value ?? true;
+                      widget.onConfigUpdate();
+                    });
+                  },
+                  title: Text(
+                    'Collect error pages (HTTP 4XX)',
+                    style: GoogleFonts.roboto(fontSize: 14),
+                  ),
+                  subtitle: Text(
+                    'Turning this option off will mean no indications of missing pages encountered during crawl are given!',
+                    style: GoogleFonts.roboto(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+                CheckboxListTile(
+                  value: widget.config.collectRedirectionPages,
+                  onChanged: (value) {
+                    setState(() {
+                      widget.config.collectRedirectionPages = value ?? true;
+                      widget.onConfigUpdate();
+                    });
+                  },
+                  title: Text(
+                    'Collect redirection pages (HTTP 3XX)',
+                    style: GoogleFonts.roboto(fontSize: 14),
+                  ),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+                CheckboxListTile(
+                  value: widget.config.autoMarkTranslatable,
+                  onChanged: (value) {
+                    setState(() {
+                      widget.config.autoMarkTranslatable = value ?? true;
+                      widget.onConfigUpdate();
+                    });
+                  },
+                  title: Text(
+                    'Automatically mark visited resources as translatable',
+                    style: GoogleFonts.roboto(fontSize: 14),
+                  ),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+              ],
             ),
           ),
         ],

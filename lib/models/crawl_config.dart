@@ -7,7 +7,13 @@ enum CrawlType {
   tlsContentExtraction,
 }
 
-enum CrawlScope { entireSite, currentPages, specificPages, sitemapPages }
+enum CrawlScope {
+  entireSite,
+  currentPages,
+  specificPages,
+  sitemapPages,
+  targetLanguageSpecific
+}
 
 enum SnapshotOption { useExisting, compareContent, rebuildAll, createNew }
 
@@ -18,34 +24,42 @@ class CrawlConfig {
   CrawlType? crawlType;
   bool prerenderPages = false;
   bool useCrest = false;
+  bool generateWorkPackages = false;
+  int entriesPerPackage = 100; // Default number of entries per package
 
   // Scope step
   CrawlScope? crawlScope;
   int pageLimit = 100;
   int? maxDepth; // Optional max crawl depth
   List<String> specificUrls = [];
+  List<String> specificPages = [];
+  List<String> currentPages = [];
+  bool addUnvisitedUrls = false;
+  bool collectErrorPages = false;
+  bool collectRedirectionPages = false;
+  bool autoMarkTranslatable = false;
   bool includeNewUrls = false;
+  List<String> targetLanguages = [];
+  bool crawlWithoutTargetLanguage = false;
 
   // Restrictions step
   List<String> includePrefixes = [];
   List<String> excludePrefixes = [];
-  List<String> regexRestrictions = []; // Added for regex restrictions
+  List<String> regexRestrictions = [];
   bool makePermanent = false;
 
   // Snapshot step
-  SnapshotOption snapshotOption = SnapshotOption.useExisting;
+  SnapshotOption? snapshotOption;
   String selectedSnapshot = '';
-  bool storeNewPages = true;
+  bool storeNewPages = false;
   bool buildLocalCache = false;
 
   // Fine-tune step
-  bool collectHtmlPages = true;
+  bool collectHtmlPages = false;
   bool collectJsCssResources = false;
   bool collectImages = false;
   bool collectBinaryResources = false;
-  bool collectErrorPages = false;
   bool collectExternalDomains = false;
-  bool collectRedirectionPages = false;
   bool collectShortLinks = false;
   bool skipContentTypeCheck = false;
   bool doNotReloadExistingResources = false;
@@ -53,13 +67,14 @@ class CrawlConfig {
   bool crawlNewUrlsNotInList = false;
   int simultaneousRequests = 5;
   String sessionCookie = '';
+  bool markVisitedResourcesAsTranslatable = false;
 
   // Recurrence step
   RecurrenceFrequency recurrenceFrequency = RecurrenceFrequency.none;
   TimeOfDay recurrenceTime = const TimeOfDay(hour: 2, minute: 0);
   int recurrenceDayOfWeek = 1; // Monday
   int recurrenceDayOfMonth = 1;
-  int recurrenceCustomDays = 7; // Default to weekly for custom days
+  int recurrenceCustomDays = 7;
   bool useRotatingSnapshots = false;
   List<String> selectedRotatingSnapshots = [];
   DateTime? firstScheduledCrawlDate;

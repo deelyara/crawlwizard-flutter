@@ -83,37 +83,37 @@ class _ReviewScreenState extends State<ReviewScreen> {
           _buildSectionHeader(context, 'Crawl type'),
           _buildTypeContent(context),
           
-          const Divider(height: 32),
+          Divider(color: Colors.grey.shade300, height: 32),
 
         // Scope section
           _buildSectionHeader(context, 'Scope'),
           _buildScopeContent(context),
           
-          const Divider(height: 32),
+          Divider(color: Colors.grey.shade300, height: 32),
 
         // Restrictions section
           _buildSectionHeader(context, 'Restrictions'),
           _buildRestrictionsContent(context),
           
-          const Divider(height: 32),
+          Divider(color: Colors.grey.shade300, height: 32),
 
         // Origin Snapshot section
           _buildSectionHeader(context, 'Snapshot'),
           _buildSnapshotContent(context),
           
-          const Divider(height: 32),
+          Divider(color: Colors.grey.shade300, height: 32),
 
         // Fine-tune section
           _buildSectionHeader(context, 'Fine-tune'),
           _buildFinetuneContent(context),
           
-          const Divider(height: 32),
+          Divider(color: Colors.grey.shade300, height: 32),
 
         // Recurrence section
           _buildSectionHeader(context, 'Recurrence'),
           _buildRecurrenceContent(context),
           
-          const Divider(height: 32),
+          Divider(color: Colors.grey.shade300, height: 32),
           
           // Note field with markdown preview
           Column(
@@ -144,13 +144,14 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 8),
               // Fixed outline for notes section
               _showPreview 
                 ? Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.grey.shade300,
+                        color: Theme.of(context).colorScheme.outlineVariant,
                         width: 1.0,
                       ),
                     ),
@@ -176,38 +177,33 @@ class _ReviewScreenState extends State<ReviewScreen> {
                                 data: _noteController.text,
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
-            ),
-          ),
-        ),
+                              ),
+                      ),
+                    ),
                   )
-                : Container(
-                    decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: _isNoteFocused ? primaryColor : Colors.grey.shade300,
-                        width: 1.0,
+                : TextField(
+                    controller: _noteController,
+                    maxLines: 6,
+                    decoration: InputDecoration(
+                      hintText: 'Add notes about this crawl (supports markdown)',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
                       ),
-                    ),
-                    child: Focus(
-                      onFocusChange: (hasFocus) {
-                        setState(() {
-                          _isNoteFocused = hasFocus;
-                        });
-                      },
-                      child: TextField(
-                        controller: _noteController,
-                        maxLines: 6,
-                        decoration: InputDecoration(
-                          hintText: 'Add notes about this crawl (supports markdown)',
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.all(16),
-                        ),
-                        onChanged: (value) {
-                          widget.config.userNote = value;
-                          widget.onConfigUpdate();
-                        },
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
                       ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: primaryColor, width: 2),
+                      ),
+                      contentPadding: const EdgeInsets.all(16),
                     ),
+                    onChanged: (value) {
+                      widget.config.userNote = value;
+                      widget.onConfigUpdate();
+                    },
                   ),
             ],
           ),
@@ -317,17 +313,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   Widget _buildScopeContent(BuildContext context) {
     String scopeText = '';
-
-    if (widget.config.crawlScope == null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Text(
-          'No crawl scope selected',
-          style: GoogleFonts.roboto(fontSize: 14, color: Colors.red),
-        ),
-      );
-    }
-
+    
     switch (widget.config.crawlScope) {
       case CrawlScope.entireSite:
         scopeText = 'Crawl entire website';
@@ -341,22 +327,201 @@ class _ReviewScreenState extends State<ReviewScreen> {
       case CrawlScope.sitemapPages:
         scopeText = 'Crawl with sitemap';
         break;
-      case null: // This should never be reached due to the if check above
-        scopeText = 'No scope selected';
+      case CrawlScope.targetLanguageSpecific:
+        scopeText = 'Crawl target language specific content';
         break;
+      default:
+        scopeText = 'No scope selected';
     }
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text(
             scopeText,
             style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
           ),
-        if (widget.config.crawlScope == CrawlScope.entireSite) ...[
-          const SizedBox(height: 8),
+          if (widget.config.crawlScope == CrawlScope.targetLanguageSpecific && widget.config.targetLanguages.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Target languages:',
+              style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ...widget.config.targetLanguages.map((lang) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4.0),
+                      child: Text(
+                        lang,
+                        style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+                      ),
+                    )).toList(),
+                    if (widget.config.crawlWithoutTargetLanguage) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Also crawl with no target language specified',
+                        style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87, fontStyle: FontStyle.italic),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (widget.config.crawlScope == CrawlScope.currentPages) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Scrollbar(
+                thumbVisibility: true,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: widget.config.currentPages.isNotEmpty 
+                      ? widget.config.currentPages.map((page) => Padding(
+                          padding: const EdgeInsets.only(bottom: 4.0),
+                          child: Text(
+                            page,
+                            style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+                          ),
+                        )).toList()
+                      : [
+                          Text(
+                            'No pages specified',
+                            style: GoogleFonts.roboto(fontSize: 14, color: Colors.grey),
+                          ),
+                        ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+          if (widget.config.crawlScope == CrawlScope.specificPages) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Scrollbar(
+                thumbVisibility: true,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: widget.config.specificUrls.isNotEmpty 
+                      ? widget.config.specificUrls.map((page) => Padding(
+                          padding: const EdgeInsets.only(bottom: 4.0),
+                          child: Text(
+                            page,
+                            style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+                          ),
+                        )).toList()
+                      : [
+                          Text(
+                            'No pages specified',
+                            style: GoogleFonts.roboto(fontSize: 14, color: Colors.grey),
+                          ),
+                        ],
+                  ),
+                ),
+              ),
+            ),
+            if (widget.config.addUnvisitedUrls) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.check,
+                    size: 16,
+                    color: Color(0xFF37618E),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Also add new URLs not in the list above, if referred, but as "Unvisited"',
+                    style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+                  ),
+                ],
+              ),
+            ],
+          ],
+          if (widget.config.crawlScope == CrawlScope.sitemapPages) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Scrollbar(
+                thumbVisibility: true,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: widget.config.specificUrls.isNotEmpty 
+                      ? widget.config.specificUrls.map((page) => Padding(
+                          padding: const EdgeInsets.only(bottom: 4.0),
+                          child: Text(
+                            page,
+                            style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+                          ),
+                        )).toList()
+                      : [
+                          Text(
+                            'No sitemaps specified',
+                            style: GoogleFonts.roboto(fontSize: 14, color: Colors.grey),
+                          ),
+                        ],
+                  ),
+                ),
+              ),
+            ),
+            if (widget.config.addUnvisitedUrls) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.check,
+                    size: 16,
+                    color: Color(0xFF37618E),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Also add new URLs not in the list above, if referred, but as "Unvisited"',
+                    style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
+                  ),
+                ],
+              ),
+            ],
+          ],
+          if (widget.config.crawlScope == CrawlScope.entireSite) ...[
+            const SizedBox(height: 8),
             Text(
               'Page limit: ${widget.config.pageLimit}',
               style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
@@ -368,15 +533,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
               ),
             ],
-          ],
-          if ((widget.config.crawlScope == CrawlScope.specificPages || 
-               widget.config.crawlScope == CrawlScope.sitemapPages) &&
-            widget.config.specificUrls.isNotEmpty) ...[
-          const SizedBox(height: 8),
-            Text(
-              'Number of specific URLs: ${widget.config.specificUrls.length}',
-              style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
-            ),
           ],
         ],
       ),
@@ -446,7 +602,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: Column(
@@ -575,7 +731,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: Column(
@@ -649,21 +805,21 @@ class _ReviewScreenState extends State<ReviewScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text(
             snapshotText,
             style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
           ),
-        if (widget.config.selectedSnapshot.isNotEmpty && useSnapshot) ...[
-          const SizedBox(height: 8),
+          if (widget.config.selectedSnapshot.isNotEmpty && useSnapshot) ...[
+            const SizedBox(height: 8),
             Text(
               'Selected snapshot: ${widget.config.selectedSnapshot}',
               style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
             ),
           ],
-        if (widget.config.buildLocalCache) ...[
-          const SizedBox(height: 8),
+          if (widget.config.buildLocalCache) ...[
+            const SizedBox(height: 8),
             Text(
               'Build local cache: Yes',
               style: GoogleFonts.roboto(fontSize: 14, color: Colors.black87),
@@ -680,10 +836,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
     if (widget.config.collectJsCssResources) resources.add('JS/CSS resources');
     if (widget.config.collectImages) resources.add('Images');
     if (widget.config.collectBinaryResources) resources.add('Binary resources');
-    if (widget.config.collectErrorPages) resources.add('Error pages');
+    
+    // Non-standard pages
+    List<String> nonStandardPages = [];
+    if (widget.config.collectErrorPages) nonStandardPages.add('Error pages');
+    if (widget.config.collectRedirectionPages) nonStandardPages.add('Redirection pages');
+    if (widget.config.collectShortLinks) nonStandardPages.add('Short links');
     if (widget.config.collectExternalDomains) resources.add('External domain resources');
-    if (widget.config.collectRedirectionPages) resources.add('Redirection pages');
-    if (widget.config.collectShortLinks) resources.add('Short links');
 
     // Additional crawl settings
     List<String> additionalSettings = [];
@@ -735,18 +894,52 @@ class _ReviewScreenState extends State<ReviewScreen> {
             ),
           ],
 
-          // Additional settings
-          if (additionalSettings.isNotEmpty) ...[
+          // Non-standard pages
+          if (nonStandardPages.isNotEmpty) ...[
             const SizedBox(height: 16),
             Text(
-              'Additional settings:',
+              'Collection of non-standard pages:',
               style: GoogleFonts.roboto(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: Colors.black87,
               ),
             ),
-        const SizedBox(height: 8),
+            const SizedBox(height: 8),
+            ...nonStandardPages.map((page) => Padding(
+              padding: const EdgeInsets.only(bottom: 4.0),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.check,
+                    size: 16,
+                    color: Color(0xFF37618E),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    page,
+                    style: GoogleFonts.roboto(
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            )).toList(),
+          ],
+
+          // Additional settings
+          if (additionalSettings.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text(
+              'Tweaks:',
+              style: GoogleFonts.roboto(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 8),
             ...additionalSettings.map((setting) => Padding(
               padding: const EdgeInsets.only(bottom: 4.0),
               child: Row(

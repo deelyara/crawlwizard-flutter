@@ -11,6 +11,7 @@ class WizardNavigation extends StatelessWidget {
   final VoidCallback onComplete;
   final bool isFromReviewStep;
   final VoidCallback? onBackToReview;
+  final bool canProceed;
 
   const WizardNavigation({
     super.key,
@@ -22,6 +23,7 @@ class WizardNavigation extends StatelessWidget {
     required this.onComplete,
     this.isFromReviewStep = false,
     this.onBackToReview,
+    this.canProceed = true,
   });
 
   @override
@@ -47,8 +49,8 @@ class WizardNavigation extends StatelessWidget {
                   style: TextButton.styleFrom(
                     foregroundColor: primaryColor,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                      horizontal: 24,
+                      vertical: 10,
                     ),
                   ),
                   child: Text(
@@ -67,8 +69,8 @@ class WizardNavigation extends StatelessWidget {
                   style: TextButton.styleFrom(
                     foregroundColor: primaryColor,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                      horizontal: 24,
+                      vertical: 10,
                     ),
                   ),
                   child: Text(
@@ -85,16 +87,17 @@ class WizardNavigation extends StatelessWidget {
               
               // Next button
               ElevatedButton(
-                onPressed: isLastStep ? onComplete : onNext,
+                onPressed: canProceed ? (isLastStep ? onComplete : onNext) : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryColor,
                   foregroundColor: Colors.white,
+                  minimumSize: const Size(120, 40),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 12,
+                    horizontal: 24,
+                    vertical: 10,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 ),
                 child: Text(

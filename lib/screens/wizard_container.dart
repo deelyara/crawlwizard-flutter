@@ -7,6 +7,7 @@ import 'recurrence_screen.dart';
 import 'review_screen.dart';
 import '../widgets/wizard_navigation.dart';
 import '../widgets/step_indicator.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class WizardContainer extends StatefulWidget {
   const WizardContainer({super.key});
@@ -54,47 +55,158 @@ class _WizardContainerState extends State<WizardContainer> {
     }
   }
 
-  Widget getStepContent() {
+  // Add method to check if the current step is valid
+  bool isCurrentStepValid() {
     switch (currentStep) {
-      case 0:
-        return TypeScreen(
+      case 0: // Type screen
+        if (crawlConfig.crawlType == null) return false;
+        
+        // For TLS crawl type, ensure at least one language is selected
+        if (crawlConfig.crawlType == CrawlType.tlsContentExtraction) {
+          return crawlConfig.targetLanguages.isNotEmpty || crawlConfig.crawlWithoutTargetLanguage;
+        }
+        return true;
+        
+      case 1: // Scope screen
+        if (crawlConfig.crawlScope == null) return false;
+        
+        // For specific pages or sitemap, require URLs to be provided
+        if (crawlConfig.crawlScope == CrawlScope.specificPages || 
+            crawlConfig.crawlScope == CrawlScope.sitemapPages) {
+          return crawlConfig.specificUrls.isNotEmpty;
+        }
+        return true;
+      default:
+        return true; // Other steps are optional
+    }
+  }
+
+  List<Step> getSteps() {
+    // Don't show recurrence step for work packages or TLS crawl
+    final bool canShowRecurrence = crawlConfig.crawlType != CrawlType.tlsContentExtraction && 
+                                 !crawlConfig.generateWorkPackages;
+
+    final steps = [
+      Step(
+        title: Text(
+          'Type',
+          style: GoogleFonts.roboto(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        content: TypeScreen(
           config: crawlConfig,
           onConfigUpdate: () => setState(() {}),
-        );
-      case 1:
-        return ScopeScreen(
+        ),
+        isActive: currentStep >= 0,
+        state: currentStep > 0 ? StepState.complete : StepState.indexed,
+      ),
+      Step(
+        title: Text(
+          'Scope',
+          style: GoogleFonts.roboto(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        content: ScopeScreen(
           config: crawlConfig,
           onConfigUpdate: () => setState(() {}),
-        );
-      case 2:
-        return RestrictionsScreen(
+        ),
+        isActive: currentStep >= 1,
+        state: currentStep > 1 ? StepState.complete : StepState.indexed,
+      ),
+      Step(
+        title: Text(
+          'Restrictions',
+          style: GoogleFonts.roboto(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        content: RestrictionsScreen(
           config: crawlConfig,
           onConfigUpdate: () => setState(() {}),
-        );
-      case 3:
-        return SnapshotScreen(
+        ),
+        isActive: currentStep >= 2,
+        state: currentStep > 2 ? StepState.complete : StepState.indexed,
+      ),
+      Step(
+        title: Text(
+          'Snapshot',
+          style: GoogleFonts.roboto(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        content: SnapshotScreen(
           config: crawlConfig,
           onConfigUpdate: () => setState(() {}),
-        );
-      case 4:
-        return FinetuneScreen(
+        ),
+        isActive: currentStep >= 3,
+        state: currentStep > 3 ? StepState.complete : StepState.indexed,
+      ),
+      Step(
+        title: Text(
+          'Fine-tune',
+          style: GoogleFonts.roboto(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        content: FinetuneScreen(
           config: crawlConfig,
           onConfigUpdate: () => setState(() {}),
-        );
-      case 5:
-        return RecurrenceScreen(
-          config: crawlConfig,
-          onConfigUpdate: () => setState(() {}),
-        );
-      case 6:
-        return ReviewScreen(
+        ),
+        isActive: currentStep >= 4,
+        state: currentStep > 4 ? StepState.complete : StepState.indexed,
+      ),
+    ];
+
+    // Only add recurrence step if allowed
+    if (canShowRecurrence) {
+      steps.add(
+        Step(
+          title: Text(
+            'Recurrence',
+            style: GoogleFonts.roboto(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          content: RecurrenceScreen(
+            config: crawlConfig,
+            onConfigUpdate: () => setState(() {}),
+            onEditStep: goToStep,
+          ),
+          isActive: currentStep >= 5,
+          state: currentStep > 5 ? StepState.complete : StepState.indexed,
+        ),
+      );
+    }
+
+    // Always add review step as the last step
+    steps.add(
+      Step(
+        title: Text(
+          'Review',
+          style: GoogleFonts.roboto(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        content: ReviewScreen(
           config: crawlConfig,
           onConfigUpdate: () => setState(() {}),
           onEditStep: goToStep,
-        );
-      default:
-        return Container();
-    }
+        ),
+        isActive: currentStep >= (canShowRecurrence ? 6 : 5),
+        state: StepState.indexed,
+      ),
+    );
+
+    return steps;
   }
 
   @override
@@ -131,6 +243,7 @@ class _WizardContainerState extends State<WizardContainer> {
             onNext: goToNextStep,
             onBack: goToPreviousStep,
             isLastStep: currentStep == totalSteps - 1,
+            canProceed: isCurrentStepValid(),
             onComplete: () {
               // Handle crawl start
               showDialog(
@@ -157,5 +270,49 @@ class _WizardContainerState extends State<WizardContainer> {
         ],
       ),
     );
+  }
+
+  Widget getStepContent() {
+    switch (currentStep) {
+      case 0:
+        return TypeScreen(
+          config: crawlConfig,
+          onConfigUpdate: () => setState(() {}),
+        );
+      case 1:
+        return ScopeScreen(
+          config: crawlConfig,
+          onConfigUpdate: () => setState(() {}),
+        );
+      case 2:
+        return RestrictionsScreen(
+          config: crawlConfig,
+          onConfigUpdate: () => setState(() {}),
+        );
+      case 3:
+        return SnapshotScreen(
+          config: crawlConfig,
+          onConfigUpdate: () => setState(() {}),
+        );
+      case 4:
+        return FinetuneScreen(
+          config: crawlConfig,
+          onConfigUpdate: () => setState(() {}),
+        );
+      case 5:
+        return RecurrenceScreen(
+          config: crawlConfig,
+          onConfigUpdate: () => setState(() {}),
+          onEditStep: goToStep,
+        );
+      case 6:
+        return ReviewScreen(
+          config: crawlConfig,
+          onConfigUpdate: () => setState(() {}),
+          onEditStep: goToStep,
+        );
+      default:
+        return Container();
+    }
   }
 }

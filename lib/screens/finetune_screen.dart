@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/crawl_config.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
 
 class FinetuneScreen extends StatefulWidget {
   final CrawlConfig config;
@@ -20,14 +21,11 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
   // Expansion panel states
   bool _isResourcesExpanded = true;
   bool _isTweaksExpanded = true;
-  bool _isWorkPackageExpanded = true;
   bool _isMiscExpanded = true;
+  bool _isAdditionalPagesExpanded = true;
   
   // Simultaneous requests value
   final TextEditingController _requestsController = TextEditingController();
-  
-  // Work package entries
-  final TextEditingController _entriesController = TextEditingController();
   
   // Custom user agent controller
   final TextEditingController _userAgentController = TextEditingController();
@@ -41,19 +39,45 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
   @override
   void initState() {
     super.initState();
-    _requestsController.text = widget.config.simultaneousRequests.toString();
+    _requestsController.text = '';
     _userAgentController.text = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0";
     _sessionCookieController.text = widget.config.sessionCookie;
     
-    // Setting the defaults for the options
-    widget.config.skipContentTypeCheck = true; // Enabled by default
-    widget.config.useEtags = false; // Disabled by default
+    // Set defaults based on scope
+    switch (widget.config.crawlScope) {
+      case CrawlScope.entireSite:
+        // Tweaks defaults
+        widget.config.skipContentTypeCheck = true;
+        widget.config.doNotReloadExistingResources = true;
+        break;
+        
+      case CrawlScope.currentPages:
+        // For existing pages, select error pages by default
+        widget.config.collectErrorPages = true;
+        // Tweaks defaults
+        widget.config.skipContentTypeCheck = true;
+        widget.config.doNotReloadExistingResources = true;
+        break;
+        
+      case CrawlScope.specificPages:
+        // For specific pages, select both error and redirection pages by default
+        widget.config.collectErrorPages = true;
+        widget.config.collectRedirectionPages = true;
+        // Tweaks defaults
+        widget.config.skipContentTypeCheck = true;
+        widget.config.doNotReloadExistingResources = true;
+        break;
+        
+      default:
+        // Default values for other cases
+        widget.config.skipContentTypeCheck = true;
+        widget.config.useEtags = false;
+    }
   }
   
   @override
   void dispose() {
     _requestsController.dispose();
-    _entriesController.dispose();
     _userAgentController.dispose();
     _sessionCookieController.dispose();
     _bearerTokenController.dispose();
@@ -97,100 +121,81 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
 
         // Resources to collect section
         _buildExpandableSection(
-          title: 'Resources to collect',
-          subtitle: 'Configure which resources to collect during the crawl',
+          title: 'Collect selected resource types',
+          subtitle: 'Choose which types of resources the crawler should collect',
           isExpanded: _isResourcesExpanded,
           onToggle: () => setState(() => _isResourcesExpanded = !_isResourcesExpanded),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Common resources',
-                style: GoogleFonts.roboto(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Main resource types
+              _buildCheckboxOption(
+                title: 'New HTML pages',
+                value: widget.config.collectHtmlPages,
+                onChanged: (value) {
+                  _handleResourceDependencies('html', value);
+                },
               ),
-              const SizedBox(height: 12),
-
-                      // Scope-specific options that appear at the top of the list
-                      if (isExistingPagesSelected)
-                        _buildCheckboxOption(
-                          title: 'Also crawl new URLs not in the list',
-                          value: widget.config.crawlNewUrlsNotInList,
-                        onChanged: (value) {
-                          setState(() {
-                              widget.config.crawlNewUrlsNotInList = value ?? false;
-                            widget.onConfigUpdate();
-                          });
-                        },
-                      ),
-
-                      if (isSpecificPagesSelected)
-                        _buildCheckboxOption(
-                          title: 'Also add new URLs not in the list above, if referred, but as "Unvisited"',
-                          value: widget.config.includeNewUrls,
-                        onChanged: (value) {
-                          setState(() {
-                              widget.config.includeNewUrls = value ?? false;
-                            widget.onConfigUpdate();
-                          });
-                        },
-                      ),
-
-                      // HTML pages
               _buildCheckboxOption(
-                title: 'Collect new HTML pages',
-                        value: widget.config.collectHtmlPages,
-                onChanged: (value) => _handleResourceDependencies('html', value),
-                      ),
-
-                      // JS, CSS resources
-              _buildCheckboxOption(
-                title: 'Collect new JS, JSON, XML, CSS resources',
-                        value: widget.config.collectJsCssResources,
-                onChanged: (value) => _handleResourceDependencies('js_css', value),
-                isDisabled: widget.config.collectImages || widget.config.collectBinaryResources,
+                title: 'New JS, JSON, XML, CSS resources',
+                value: widget.config.collectJsCssResources,
+                onChanged: (value) {
+                  _handleResourceDependencies('js_css', value);
+                },
               ),
-              
-              // Images and binary resources combined
               _buildCheckboxOption(
-                title: 'Collect new images, binary resources',
-                value: widget.config.collectImages || widget.config.collectBinaryResources,
-                onChanged: (value) => _handleResourceDependencies('images_binary', value),
+                title: 'New images, binary resources',
+                value: widget.config.collectImages,
+                onChanged: (value) {
+                  _handleResourceDependencies('images_binary', value);
+                },
               ),
-              
-              // Resources from external domains
               _buildCheckboxOption(
-                title: 'Collect resources from external domains too',
+                title: 'Resources from external domains',
                 value: widget.config.collectExternalDomains,
-                onChanged: (value) => _handleResourceDependencies('external', value),
+                onChanged: (value) {
+                  _handleResourceDependencies('external', value);
+                },
               ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
 
-                      // Error pages
+        // Additional pages to process section
+        _buildExpandableSection(
+          title: 'Collection of non-standard pages',
+          subtitle: 'Choose what non-standard pages like error pages and redirects should be collected during the crawl.',
+          isExpanded: _isAdditionalPagesExpanded,
+          onToggle: () => setState(() => _isAdditionalPagesExpanded = !_isAdditionalPagesExpanded),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               _buildCheckboxOption(
-                title: 'Collect error pages (HTTP 4XX) - Missing pages will not be reported if off',
-                        value: widget.config.collectErrorPages,
-                onChanged: (value) => _handleResourceDependencies('error', value),
-                      ),
-
-                      // Redirection pages
+                title: 'Error pages (HTTP 4XX)',
+                subtitle: 'Turning this option off will mean no indications of missing pages encountered during crawl are given!',
+                value: widget.config.collectErrorPages,
+                onChanged: (value) {
+                  _handleResourceDependencies('error', value);
+                },
+              ),
               _buildCheckboxOption(
-                title: 'Collect redirection pages (HTTP 3XX)',
-                        value: widget.config.collectRedirectionPages,
-                onChanged: (value) => _handleResourceDependencies('redirection', value),
-                      ),
-
-                      // Short links
+                title: 'Redirection pages (HTTP 3XX)',
+                value: widget.config.collectRedirectionPages,
+                onChanged: (value) {
+                  _handleResourceDependencies('redirection', value);
+                },
+              ),
               _buildCheckboxOption(
-                title: 'Collect short links (e.g. https://www.example.com/?p=123456)',
-                        value: widget.config.collectShortLinks,
-                onChanged: (value) => _handleResourceDependencies('short_links', value),
-                      ),
-                    ],
-                  ),
-                ),
+                title: 'Short links (e.g. https://www.example.com/?p=123456)',
+                value: widget.config.collectShortLinks,
+                onChanged: (value) {
+                  _handleResourceDependencies('short_links', value);
+                },
+              ),
+            ],
+          ),
+        ),
         
         const SizedBox(height: 32),
         
@@ -200,30 +205,20 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
           subtitle: 'Configure how the crawler processes and handles content',
           isExpanded: _isTweaksExpanded,
           onToggle: () => setState(() => _isTweaksExpanded = !_isTweaksExpanded),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-              Text(
-                'Common resources',
-                style: GoogleFonts.roboto(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 12),
-              
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               // Skip content type check
               _buildCheckboxOption(
                 title: 'Skip content type check if already determined',
-                        value: widget.config.skipContentTypeCheck,
-                        onChanged: (value) {
-                          setState(() {
-                            widget.config.skipContentTypeCheck = value ?? false;
-                            widget.onConfigUpdate();
-                          });
-                        },
-                      ),
+                value: widget.config.skipContentTypeCheck,
+                onChanged: (value) {
+                  setState(() {
+                    widget.config.skipContentTypeCheck = value ?? false;
+                    widget.onConfigUpdate();
+                  });
+                },
+              ),
 
               // Don't reload existing resources - now a completely independent option
               _buildCheckboxOption(
@@ -239,24 +234,24 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
               
               // Use ETags from last crawl
               _buildCheckboxOption(
-                        title: 'Use ETags from last crawl',
-                        value: widget.config.useEtags,
-                        onChanged: (value) {
-                          setState(() {
-                            widget.config.useEtags = value ?? false;
-                            widget.onConfigUpdate();
-                          });
-                        },
-                      ),
+                title: 'Use ETags from last crawl',
+                value: widget.config.useEtags,
+                onChanged: (value) {
+                  setState(() {
+                    widget.config.useEtags = value ?? false;
+                    widget.onConfigUpdate();
+                  });
+                },
+              ),
 
               const SizedBox(height: 24),
 
               // Limit number of simultaneous requests
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                      Text(
-                    'Limit number of simultaneous requests',
+                  Text(
+                    'Limit number of simultaneous requests (1-8)',
                     style: GoogleFonts.roboto(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -266,105 +261,71 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                   const SizedBox(width: 16),
                   SizedBox(
                     width: 60,
-                    child: TextField(
-                      controller: _requestsController,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextField(
+                          controller: _requestsController,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(4),
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(4),
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(4),
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(4),
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(4),
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
+                            ),
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            errorStyle: GoogleFonts.roboto(
+                              fontSize: 0,
+                              height: 0,
+                            ),
+                          ),
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              _handleRequestsInput(value);
+                            });
+                          },
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
-                      ),
-                      keyboardType: TextInputType.number,
-                        onChanged: (value) {
-                        final intValue = int.tryParse(value);
-                        if (intValue != null && intValue > 0 && intValue <= 8) {
-                          setState(() {
-                            widget.config.simultaneousRequests = intValue;
-                            widget.onConfigUpdate();
-                          });
-                        }
-                      },
+                        if (!_validateRequestsInput(_requestsController.text) && _requestsController.text.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              'Maximum value is 8',
+                              style: GoogleFonts.roboto(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-        
-        // Work package section (only show when scan is selected)
-        if (isScanSelected) ...[
-          const SizedBox(height: 32),
-          
-          _buildExpandableSection(
-            title: 'Work package',
-            subtitle: 'The Work package will contain every entry, not just the new ones',
-            isExpanded: _isWorkPackageExpanded,
-            onToggle: () => setState(() => _isWorkPackageExpanded = !_isWorkPackageExpanded),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Generate Work package for the crawl
-                _buildCheckboxOption(
-                  title: 'Generate Work package for the crawl',
-                  value: false, // Not selected by default
-                  onChanged: (value) {
-                    // Now we allow changes
-                    setState(() {
-                      // Update any work package related configuration
-                      widget.onConfigUpdate();
-                    });
-                  },
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Split package by every X entries
-                Row(
-                  children: [
-                    Text(
-                      'Split package by every',
-                      style: GoogleFonts.roboto(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      width: 60,
-                      child: TextField(
-                        controller: _entriesController,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
-                          ),
-                        ),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'entries',
-                      style: GoogleFonts.roboto(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
         
         const SizedBox(height: 32),
         
@@ -374,9 +335,9 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
           subtitle: 'Configure authentication and custom request settings for the crawl',
           isExpanded: _isMiscExpanded,
           onToggle: () => setState(() => _isMiscExpanded = !_isMiscExpanded),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               // Custom user agent
               Text(
                 'Custom user agent',
@@ -387,14 +348,14 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                 ),
               ),
               const SizedBox(height: 4),
-                      Text(
+              Text(
                 'Optionally override the crawler\'s default user agent with one of your choice',
                 style: GoogleFonts.roboto(
                   fontSize: 12,
-                  color: Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
               TextField(
                 controller: _userAgentController,
                 decoration: InputDecoration(
@@ -412,7 +373,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
               
               // Session Cookie
               Text(
-                'Session Cookie',
+                'Session cookie',
                 style: GoogleFonts.roboto(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -420,38 +381,38 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                 ),
               ),
               const SizedBox(height: 4),
-                      Text(
+              Text(
                 'Login to the site and copy-paste the token of your session cookie',
                 style: GoogleFonts.roboto(
                   fontSize: 12,
-                  color: Colors.black54,
+                  color: Colors.black87,
                 ),
               ),
               const SizedBox(height: 8),
-                      TextField(
+              TextField(
                 controller: _sessionCookieController,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
-                          ),
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            widget.config.sessionCookie = value;
-                            widget.onConfigUpdate();
-                          });
-                        },
-                      ),
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    widget.config.sessionCookie = value;
+                    widget.onConfigUpdate();
+                  });
+                },
+              ),
               
               const SizedBox(height: 24),
               
               // Bearer Token
               Text(
-                'Bearer Token',
+                'Bearer token',
                 style: GoogleFonts.roboto(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -463,7 +424,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                 'Bearer tokens can be used to access protected resources',
                 style: GoogleFonts.roboto(
                   fontSize: 12,
-                  color: Colors.black54,
+                  color: Colors.black87,
                 ),
               ),
               const SizedBox(height: 8),
@@ -479,6 +440,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -528,7 +490,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                           subtitle,
                           style: GoogleFonts.roboto(
                             fontSize: 14,
-                            color: Colors.black54,
+                            color: Colors.black87,
                           ),
                         ),
                       ],
@@ -563,10 +525,12 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
     required bool value,
     required Function(bool?) onChanged,
     bool isDisabled = false,
+    String? subtitle,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
             width: 24,
@@ -582,13 +546,28 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-                      title,
-              style: GoogleFonts.roboto(
-                fontSize: 14,
-                fontWeight: FontWeight.normal,
-                color: isDisabled ? Colors.black45 : Colors.black87,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.roboto(
+                    fontSize: 14,
+                    fontWeight: FontWeight.normal,
+                    color: isDisabled ? Colors.black45 : Colors.black87,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.roboto(
+                      fontSize: 12,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ],
@@ -630,6 +609,27 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
         widget.config.collectShortLinks = value ?? false;
       }
       
+      widget.onConfigUpdate();
+    });
+  }
+
+  bool _validateRequestsInput(String value) {
+    if (value.isEmpty) return true;
+    try {
+      final intValue = int.parse(value);
+      return intValue >= 1 && intValue <= 8;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  void _handleRequestsInput(String value) {
+    setState(() {
+      if (value.isEmpty) {
+        widget.config.simultaneousRequests = 5; // Default value
+      } else if (_validateRequestsInput(value)) {
+        widget.config.simultaneousRequests = int.parse(value);
+      }
       widget.onConfigUpdate();
     });
   }
