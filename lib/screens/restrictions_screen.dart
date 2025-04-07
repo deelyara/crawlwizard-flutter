@@ -43,6 +43,9 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
   final List<String> _regexRestrictions = [];
   final _regexController = TextEditingController();
 
+  // Class-level tracking variable for hover state
+  bool _isDeDeChipHovered = false;
+
   @override
   void initState() {
     super.initState();
@@ -256,6 +259,59 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
     );
   }
 
+  // Build a special locked restriction chip
+  Widget _buildLockedRestrictionChip(String prefix) {
+    final displayText = '$prefix*';
+    final chipColor = const Color(0xFFCBDCF6);
+    final chipTextColor = const Color(0xFF191C20);
+    
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isDeDeChipHovered = true),
+      onExit: (_) => setState(() => _isDeDeChipHovered = false),
+      child: Tooltip(
+        message: "Published subdirectories are always excluded from crawling",
+        verticalOffset: 20,
+        preferBelow: true,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.inverseSurface,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        textStyle: Theme.of(context).tooltipTheme.textStyle ?? GoogleFonts.roboto(
+          fontSize: 12,
+          color: Theme.of(context).colorScheme.onInverseSurface,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(right: 8.0, bottom: 8.0),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: chipColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _isDeDeChipHovered ? Icons.lock : Icons.check,
+                  size: 16,
+                  color: chipTextColor,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  displayText,
+                  style: TextStyle(
+                    color: chipTextColor,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final primaryColor = const Color(0xFF37618E);
@@ -355,16 +411,20 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Wrap(
-                    children: _existingExcludePrefixes.map((prefix) {
-                      final isDisabled = _disabledExistingPrefixes.contains(prefix);
-                      return _buildRestrictionChip(
-                        prefix: prefix,
-                        isTemporary: false,
-                        isExclude: true,
-                        isDisabled: isDisabled,
-                        onRemove: () {}, // Not applicable for existing
-                      );
-                    }).toList(),
+                    children: [
+                      // Add the special non-clickable /de_de/* chip at the beginning
+                      _buildLockedRestrictionChip('/de_de'),
+                      ..._existingExcludePrefixes.map((prefix) {
+                        final isDisabled = _disabledExistingPrefixes.contains(prefix);
+                        return _buildRestrictionChip(
+                          prefix: prefix,
+                          isTemporary: false,
+                          isExclude: true,
+                          isDisabled: isDisabled,
+                          onRemove: () {}, // Not applicable for existing
+                        );
+                      }).toList(),
+                    ],
                   ),
                 ],
               ],

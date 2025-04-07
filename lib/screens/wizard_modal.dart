@@ -311,13 +311,14 @@ class _WizardModalState extends State<WizardModal> {
                         // Skip to review button
                         if (_currentStep >= 1 && _currentStep < 6 && !_fromReviewStep)
                           TextButton(
-                            onPressed: _skipToReview,
+                            onPressed: _isCurrentStepValid() ? _skipToReview : null,
                             style: TextButton.styleFrom(
                               foregroundColor: primaryColor,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 24,
                                 vertical: 10,
                               ),
+                              disabledForegroundColor: Colors.grey.shade400,
                             ),
                             child: Text(
                               'Skip to review',
