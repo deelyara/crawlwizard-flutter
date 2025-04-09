@@ -65,7 +65,7 @@ class CrawlConfig {
   bool doNotReloadExistingResources = false;
   bool useEtags = false;
   bool crawlNewUrlsNotInList = false;
-  int simultaneousRequests = 5;
+  int simultaneousRequests = 8;
   String sessionCookie = '';
   bool markVisitedResourcesAsTranslatable = false;
 
@@ -109,5 +109,28 @@ class CrawlConfig {
     // Calculate total
     double totalCost = (pageLimit / 1000) * baseCost;
     return totalCost;
+  }
+
+  // Check if recurrence is allowed for the current crawl type
+  bool isRecurrenceAllowed() {
+    if (crawlType == null) return false;
+    
+    // TLS Content Extraction and Work Packages don't support recurrence
+    if (crawlType == CrawlType.tlsContentExtraction) return false;
+    if (generateWorkPackages) return false;
+    
+    return true;
+  }
+
+  // Reset recurrence settings to default values
+  void resetRecurrenceSettings() {
+    recurrenceFrequency = RecurrenceFrequency.none;
+    recurrenceTime = const TimeOfDay(hour: 2, minute: 0);
+    recurrenceDayOfWeek = 1;
+    recurrenceDayOfMonth = 1;
+    recurrenceCustomDays = 7;
+    useRotatingSnapshots = false;
+    selectedRotatingSnapshots = [];
+    firstScheduledCrawlDate = null;
   }
 }

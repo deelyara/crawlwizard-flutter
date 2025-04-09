@@ -128,9 +128,12 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
   Widget _buildInfoTooltip(String message) {
     return Tooltip(
       message: message,
-      textStyle: const TextStyle(color: Colors.white, fontSize: 14),
+      textStyle: TextStyle(
+        color: Theme.of(context).colorScheme.onInverseSurface,
+        fontSize: 14
+      ),
       decoration: BoxDecoration(
-        color: Colors.grey.shade700,
+        color: Theme.of(context).colorScheme.inverseSurface,
         borderRadius: BorderRadius.circular(4),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -145,12 +148,12 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
   @override
   Widget build(BuildContext context) {
     final primaryColor = const Color(0xFF37618E);
-    final TextStyle helpTextStyle = GoogleFonts.roboto(
+    final TextStyle helpTextStyle = GoogleFonts.notoSans(
       fontSize: 14,
       color: Colors.black87,
     );
     
-    final TextStyle labelTextStyle = GoogleFonts.roboto(
+    final TextStyle labelTextStyle = GoogleFonts.notoSans(
       fontSize: 14,
       color: Colors.black87,
     );
@@ -160,7 +163,7 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
           children: [
             Text(
           'What do you want to crawl?',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.notoSans(
             fontSize: 24,
             fontWeight: FontWeight.w500,
             color: Colors.black87,
@@ -350,6 +353,11 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
             setState(() {
               widget.config.crawlScope = value;
               
+              // Set default options for specific pages
+              widget.config.collectErrorPages = true;
+              widget.config.collectRedirectionPages = true;
+              widget.config.autoMarkTranslatable = true;
+              
               // Remove the auto-population of URLs
               // If user selects this option, they need to explicitly add URLs
               widget.onConfigUpdate();
@@ -400,11 +408,11 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
                   },
                   title: Text(
                     'Also add new URLs not in the list above, if referred, but as "Unvisited"',
-                    style: GoogleFonts.roboto(fontSize: 14),
+                    style: GoogleFonts.notoSans(fontSize: 14),
                   ),
                   subtitle: Text(
                     'Takes precedence over Page Freeze setting',
-                    style: GoogleFonts.roboto(fontSize: 12, color: Colors.grey[600]),
+                    style: GoogleFonts.notoSans(fontSize: 12, color: Colors.grey[600]),
                   ),
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
@@ -420,11 +428,11 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
                   },
                   title: Text(
                     'Collect error pages (HTTP 4XX)',
-                    style: GoogleFonts.roboto(fontSize: 14),
+                    style: GoogleFonts.notoSans(fontSize: 14),
                   ),
                   subtitle: Text(
                     'Turning this option off will mean no indications of missing pages encountered during crawl are given!',
-                    style: GoogleFonts.roboto(fontSize: 12, color: Colors.grey[600]),
+                    style: GoogleFonts.notoSans(fontSize: 12, color: Colors.grey[600]),
                   ),
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
@@ -440,7 +448,7 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
                   },
                   title: Text(
                     'Collect redirection pages (HTTP 3XX)',
-                    style: GoogleFonts.roboto(fontSize: 14),
+                    style: GoogleFonts.notoSans(fontSize: 14),
                   ),
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
@@ -456,7 +464,7 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
                   },
                   title: Text(
                     'Automatically mark visited resources as translatable',
-                    style: GoogleFonts.roboto(fontSize: 14),
+                    style: GoogleFonts.notoSans(fontSize: 14),
                   ),
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
@@ -478,6 +486,12 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
           onChanged: (value) {
             setState(() {
               widget.config.crawlScope = CrawlScope.sitemapPages;
+              
+              // Set default options for sitemap pages
+              widget.config.collectErrorPages = true;
+              widget.config.collectRedirectionPages = true;
+              widget.config.autoMarkTranslatable = true;
+              
               widget.onConfigUpdate();
             });
           },
@@ -528,11 +542,11 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
                   },
                   title: Text(
                     'Also add new URLs not in the list above, if referred, but as "Unvisited"',
-                    style: GoogleFonts.roboto(fontSize: 14),
+                    style: GoogleFonts.notoSans(fontSize: 14),
                   ),
                   subtitle: Text(
                     'Takes precedence over Page Freeze setting',
-                    style: GoogleFonts.roboto(fontSize: 12, color: Colors.grey[600]),
+                    style: GoogleFonts.notoSans(fontSize: 12, color: Colors.grey[600]),
                   ),
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
@@ -548,11 +562,11 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
                   },
                   title: Text(
                     'Collect error pages (HTTP 4XX)',
-                    style: GoogleFonts.roboto(fontSize: 14),
+                    style: GoogleFonts.notoSans(fontSize: 14),
                   ),
                   subtitle: Text(
                     'Turning this option off will mean no indications of missing pages encountered during crawl are given!',
-                    style: GoogleFonts.roboto(fontSize: 12, color: Colors.grey[600]),
+                    style: GoogleFonts.notoSans(fontSize: 12, color: Colors.grey[600]),
                   ),
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
@@ -568,7 +582,7 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
                   },
                   title: Text(
                     'Collect redirection pages (HTTP 3XX)',
-                    style: GoogleFonts.roboto(fontSize: 14),
+                    style: GoogleFonts.notoSans(fontSize: 14),
                   ),
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
@@ -584,7 +598,7 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
                   },
                   title: Text(
                     'Automatically mark visited resources as translatable',
-                    style: GoogleFonts.roboto(fontSize: 14),
+                    style: GoogleFonts.notoSans(fontSize: 14),
                   ),
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
@@ -628,7 +642,7 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.notoSans(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                       color: Colors.black87,
@@ -637,7 +651,7 @@ https://csega.hu/muvek/rovid-prozak/hiena'''
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.notoSans(
                       fontSize: 14,
                       color: Colors.black87,
                     ),

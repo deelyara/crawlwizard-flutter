@@ -28,7 +28,7 @@ class _TypeScreenState extends State<TypeScreen> {
       children: [
         Text(
           'What do you need to do with your content?',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.notoSans(
             fontSize: 24,
             fontWeight: FontWeight.w500,
             color: Colors.black87,
@@ -37,7 +37,7 @@ class _TypeScreenState extends State<TypeScreen> {
         const SizedBox(height: 8),
         Text(
           'Choose based on where you are in your translation process',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.notoSans(
             fontSize: 14,
             color: Colors.black87,
           ),
@@ -53,6 +53,10 @@ class _TypeScreenState extends State<TypeScreen> {
           onChanged: (value) {
             setState(() {
               widget.config.crawlType = value;
+              // Check if recurrence should be reset
+              if (!widget.config.isRecurrenceAllowed()) {
+                widget.config.resetRecurrenceSettings();
+              }
               widget.onConfigUpdate();
             });
           },
@@ -68,6 +72,10 @@ class _TypeScreenState extends State<TypeScreen> {
           onChanged: (value) {
             setState(() {
               widget.config.crawlType = value;
+              // Check if recurrence should be reset
+              if (!widget.config.isRecurrenceAllowed()) {
+                widget.config.resetRecurrenceSettings();
+              }
               widget.onConfigUpdate();
             });
           },
@@ -90,6 +98,10 @@ class _TypeScreenState extends State<TypeScreen> {
                         onChanged: (value) {
                           setState(() {
                             widget.config.generateWorkPackages = value ?? false;
+                            // Check if recurrence should be reset when work packages are enabled
+                            if (value == true) {
+                              widget.config.resetRecurrenceSettings();
+                            }
                             widget.onConfigUpdate();
                           });
                         },
@@ -99,7 +111,7 @@ class _TypeScreenState extends State<TypeScreen> {
                     const SizedBox(width: 8),
                     Text(
                       'Generate work package for this crawl',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.notoSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: Colors.black87,
@@ -114,7 +126,7 @@ class _TypeScreenState extends State<TypeScreen> {
                       const SizedBox(width: 32),
                       Text(
                         'Split package by every',
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.notoSans(
                           fontSize: 14,
                           fontWeight: FontWeight.normal,
                           color: Colors.black87,
@@ -127,7 +139,7 @@ class _TypeScreenState extends State<TypeScreen> {
                           decoration: InputDecoration(
                             hintText: '100',
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(20),
                             ),
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
@@ -156,7 +168,7 @@ class _TypeScreenState extends State<TypeScreen> {
                       const SizedBox(width: 8),
                       Text(
                         'entries',
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.notoSans(
                           fontSize: 14,
                           color: Colors.black87,
                         ),
@@ -178,6 +190,10 @@ class _TypeScreenState extends State<TypeScreen> {
           onChanged: (value) {
             setState(() {
               widget.config.crawlType = value;
+              // Check if recurrence should be reset
+              if (!widget.config.isRecurrenceAllowed()) {
+                widget.config.resetRecurrenceSettings();
+              }
               widget.onConfigUpdate();
             });
           },
@@ -193,6 +209,10 @@ class _TypeScreenState extends State<TypeScreen> {
           onChanged: (value) {
             setState(() {
               widget.config.crawlType = value;
+              // Check if recurrence should be reset
+              if (!widget.config.isRecurrenceAllowed()) {
+                widget.config.resetRecurrenceSettings();
+              }
               widget.onConfigUpdate();
             });
           },
@@ -210,7 +230,7 @@ class _TypeScreenState extends State<TypeScreen> {
                 Container(
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade200),
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   child: Column(
@@ -221,7 +241,7 @@ class _TypeScreenState extends State<TypeScreen> {
                         padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
                         child: Text(
                           'Crawl separately for the following target languages:',
-                          style: GoogleFonts.roboto(
+                          style: GoogleFonts.notoSans(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                             color: Colors.black87,
@@ -235,7 +255,7 @@ class _TypeScreenState extends State<TypeScreen> {
                         margin: const EdgeInsets.symmetric(horizontal: 16),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         child: Theme(
                           data: Theme.of(context).copyWith(
@@ -249,7 +269,7 @@ class _TypeScreenState extends State<TypeScreen> {
                           child: ExpansionTile(
                             title: Text(
                               'Select language(s)',
-                              style: GoogleFonts.roboto(fontSize: 14),
+                              style: GoogleFonts.notoSans(fontSize: 14),
                             ),
                             childrenPadding: const EdgeInsets.only(bottom: 8),
                             tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
@@ -262,7 +282,7 @@ class _TypeScreenState extends State<TypeScreen> {
                                     hintText: 'Search...',
                                     prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
                                     border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(4),
+                                      borderRadius: BorderRadius.circular(20),
                                       borderSide: BorderSide(color: Colors.grey.shade300),
                                     ),
                                     contentPadding: const EdgeInsets.symmetric(
@@ -303,14 +323,14 @@ class _TypeScreenState extends State<TypeScreen> {
                                             image: NetworkImage(langData[lang]['flag']),
                                             fit: BoxFit.cover,
                                           ),
-                                          borderRadius: BorderRadius.circular(2),
+                                          borderRadius: BorderRadius.circular(4),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
                                       Flexible(
                                         child: Text(
                                           '${langData[lang]['name']} | $lang',
-                                          style: GoogleFonts.roboto(fontSize: 14),
+                                          style: GoogleFonts.notoSans(fontSize: 14),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
@@ -323,6 +343,10 @@ class _TypeScreenState extends State<TypeScreen> {
                                         widget.config.targetLanguages.add(lang);
                                       } else {
                                         widget.config.targetLanguages.remove(lang);
+                                      }
+                                      // Check if recurrence should be reset
+                                      if (!widget.config.isRecurrenceAllowed()) {
+                                        widget.config.resetRecurrenceSettings();
                                       }
                                       widget.onConfigUpdate();
                                     });
@@ -344,12 +368,16 @@ class _TypeScreenState extends State<TypeScreen> {
                         child: CheckboxListTile(
                           title: Text(
                             'Also crawl with no target language specified',
-                            style: GoogleFonts.roboto(fontSize: 14),
+                            style: GoogleFonts.notoSans(fontSize: 14),
                           ),
                           value: widget.config.crawlWithoutTargetLanguage,
                           onChanged: (bool? value) {
                             setState(() {
                               widget.config.crawlWithoutTargetLanguage = value ?? false;
+                              // Check if recurrence should be reset
+                              if (!widget.config.isRecurrenceAllowed()) {
+                                widget.config.resetRecurrenceSettings();
+                              }
                               widget.onConfigUpdate();
                             });
                           },
@@ -369,7 +397,7 @@ class _TypeScreenState extends State<TypeScreen> {
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF0F7FF),
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(20),
                               border: Border.all(color: const Color(0xFFCBE2FF)),
                             ),
                             child: Row(
@@ -382,14 +410,48 @@ class _TypeScreenState extends State<TypeScreen> {
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
-                                  child: Text(
-                                    widget.config.targetLanguages.length > 0
-                                      ? 'Multiple languages will start multiple crawls. Will be crawled ${widget.config.targetLanguages.length + (widget.config.crawlWithoutTargetLanguage ? 1 : 0)} times.'
-                                      : 'Will be crawled once with no target language specified.',
-                                    style: GoogleFonts.roboto(
-                                      fontSize: 14,
-                                      color: Colors.black87,
-                                    ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        widget.config.targetLanguages.length > 0
+                                          ? 'Multiple languages will start multiple crawls. Will be crawled ${widget.config.targetLanguages.length + (widget.config.crawlWithoutTargetLanguage ? 1 : 0)} times.'
+                                          : 'Will be crawled once with no target language specified.',
+                                        style: GoogleFonts.notoSans(
+                                          fontSize: 14,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text.rich(
+                                        TextSpan(
+                                          children: [
+                                            TextSpan(
+                                              text: 'We\'ll set the ',
+                                              style: GoogleFonts.notoSans(
+                                                fontSize: 14,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                            TextSpan(
+                                              text: 'X-TranslationProxy-Translating-To',
+                                              style: GoogleFonts.notoSansMono(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                            TextSpan(
+                                              text: ' header to specify the target language during crawling.',
+                                              style: GoogleFonts.notoSans(
+                                                fontSize: 14,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -413,6 +475,10 @@ class _TypeScreenState extends State<TypeScreen> {
                         onChanged: (value) {
                           setState(() {
                             widget.config.generateWorkPackages = value ?? false;
+                            // Check if recurrence should be reset when work packages are enabled
+                            if (value == true) {
+                              widget.config.resetRecurrenceSettings();
+                            }
                             widget.onConfigUpdate();
                           });
                         },
@@ -422,7 +488,7 @@ class _TypeScreenState extends State<TypeScreen> {
                     const SizedBox(width: 8),
                     Text(
                       'Generate work package for this crawl',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.notoSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: Colors.black87,
@@ -437,7 +503,7 @@ class _TypeScreenState extends State<TypeScreen> {
                       const SizedBox(width: 32),
                       Text(
                         'Split package by every',
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.notoSans(
                           fontSize: 14,
                           fontWeight: FontWeight.normal,
                           color: Colors.black87,
@@ -450,7 +516,7 @@ class _TypeScreenState extends State<TypeScreen> {
                           decoration: InputDecoration(
                             hintText: '100',
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(20),
                             ),
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
@@ -479,7 +545,7 @@ class _TypeScreenState extends State<TypeScreen> {
                       const SizedBox(width: 8),
                       Text(
                         'entries',
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.notoSans(
                           fontSize: 14,
                           color: Colors.black87,
                         ),
@@ -499,7 +565,7 @@ class _TypeScreenState extends State<TypeScreen> {
           margin: const EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
             color: const Color(0xFFF8F9FF),
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -514,6 +580,10 @@ class _TypeScreenState extends State<TypeScreen> {
                       // If prerender is unchecked, also uncheck "Use Crest"
                       if (!value && widget.config.useCrest) {
                         widget.config.useCrest = false;
+                      }
+                      // Check if recurrence should be reset
+                      if (!widget.config.isRecurrenceAllowed()) {
+                        widget.config.resetRecurrenceSettings();
                       }
                       widget.onConfigUpdate();
                     });
@@ -531,7 +601,7 @@ class _TypeScreenState extends State<TypeScreen> {
                   children: [
                     Text(
                       'Prerender pages for more accurate wordcount',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.notoSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: Colors.black87,
@@ -540,7 +610,7 @@ class _TypeScreenState extends State<TypeScreen> {
                     const SizedBox(height: 4),
                     Text(
                       'Great to detect JS-generated content',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.notoSans(
                         fontSize: 14,
                         color: Colors.black54,
                       ),
@@ -566,6 +636,10 @@ class _TypeScreenState extends State<TypeScreen> {
                     ? (value) {
                         setState(() {
                           widget.config.useCrest = value!;
+                          // Check if recurrence should be reset
+                          if (!widget.config.isRecurrenceAllowed()) {
+                            widget.config.resetRecurrenceSettings();
+                          }
                           widget.onConfigUpdate();
                         });
                       }
@@ -582,7 +656,7 @@ class _TypeScreenState extends State<TypeScreen> {
                   children: [
                     Text(
                       'Use Crest - Use Crest for content extraction (requires prerender)',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.notoSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                         color: widget.config.prerenderPages ? Colors.black87 : Colors.black45,
@@ -593,11 +667,11 @@ class _TypeScreenState extends State<TypeScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         'Admin only feature',
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.notoSans(
                           fontSize: 12,
                           color: Colors.black54,
                         ),
@@ -643,7 +717,7 @@ class _TypeScreenState extends State<TypeScreen> {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.notoSans(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                       color: Colors.black87,
@@ -652,7 +726,7 @@ class _TypeScreenState extends State<TypeScreen> {
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.notoSans(
                       fontSize: 14,
                       color: Colors.black87,
                     ),

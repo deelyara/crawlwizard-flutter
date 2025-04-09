@@ -114,6 +114,7 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: _colorScheme,
       textTheme: textTheme,
+      fontFamily: 'NotoSans',
       appBarTheme: AppBarTheme(
         backgroundColor: _colorScheme.surface,
         foregroundColor: _colorScheme.primary,

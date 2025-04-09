@@ -39,40 +39,84 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
   @override
   void initState() {
     super.initState();
-    _requestsController.text = '';
+    // Initialize the controller with the default value from the config
+    _requestsController.text = widget.config.simultaneousRequests.toString(); 
     _userAgentController.text = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0";
     _sessionCookieController.text = widget.config.sessionCookie;
     
-    // Set defaults based on scope
-    switch (widget.config.crawlScope) {
-      case CrawlScope.entireSite:
-        // Tweaks defaults
-        widget.config.skipContentTypeCheck = true;
-        widget.config.doNotReloadExistingResources = true;
-        break;
-        
-      case CrawlScope.currentPages:
-        // For existing pages, select error pages by default
+    // Use post-frame callback to safely set defaults after the widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _resetToDefaults();
+      widget.onConfigUpdate();
+    });
+  }
+  
+  @override
+  void didUpdateWidget(FinetuneScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // If crawl type or scope has changed, reset the defaults
+    if (oldWidget.config.crawlType != widget.config.crawlType || 
+        oldWidget.config.crawlScope != widget.config.crawlScope) {
+      _resetToDefaults();
+      widget.onConfigUpdate();
+    }
+  }
+  
+  // Method to set default selections based on crawl type and scope
+  void _resetToDefaults() {
+    // Different defaults based on crawl type and scope combinations
+    if (widget.config.crawlType == CrawlType.discovery) {
+      // Common defaults for all Discovery crawl scopes
+      widget.config.skipContentTypeCheck = true;
+      widget.config.doNotReloadExistingResources = true;
+      
+      if (widget.config.crawlScope == CrawlScope.entireSite) {
+        // Discovery - Entire website
+        widget.config.collectHtmlPages = true;  // ONLY set for Entire website
         widget.config.collectErrorPages = true;
-        // Tweaks defaults
-        widget.config.skipContentTypeCheck = true;
-        widget.config.doNotReloadExistingResources = true;
-        break;
-        
-      case CrawlScope.specificPages:
-        // For specific pages, select both error and redirection pages by default
+      } 
+      else if (widget.config.crawlScope == CrawlScope.currentPages) {
+        // Discovery - Existing pages
+        widget.config.collectHtmlPages = false; // Explicitly NOT selected
+        widget.config.collectErrorPages = true;
+      } 
+      else if (widget.config.crawlScope == CrawlScope.specificPages || 
+               widget.config.crawlScope == CrawlScope.sitemapPages) {
+        // Discovery - Specific pages or Sitemaps
+        widget.config.collectHtmlPages = false; // Explicitly NOT selected
         widget.config.collectErrorPages = true;
         widget.config.collectRedirectionPages = true;
-        // Tweaks defaults
-        widget.config.skipContentTypeCheck = true;
-        widget.config.doNotReloadExistingResources = true;
-        break;
-        
-      default:
-        // Default values for other cases
-        widget.config.skipContentTypeCheck = true;
-        widget.config.useEtags = false;
+      }
+    } 
+    else if (widget.config.crawlType == CrawlType.contentExtraction || 
+             widget.config.crawlType == CrawlType.tlsContentExtraction ||
+             widget.config.crawlType == CrawlType.newContentDetection) {
+      
+      // Common defaults for all content extraction types
+      widget.config.useEtags = true;
+      
+      if (widget.config.crawlScope == CrawlScope.entireSite) {
+        // Content extraction - Entire website
+        widget.config.collectHtmlPages = true;
+        widget.config.collectErrorPages = true;
+      }
+      else if (widget.config.crawlScope == CrawlScope.currentPages) {
+        // Content extraction - Existing pages
+        widget.config.collectHtmlPages = false;
+        widget.config.collectErrorPages = true;
+      }
+      else if (widget.config.crawlScope == CrawlScope.specificPages || 
+               widget.config.crawlScope == CrawlScope.sitemapPages) {
+        // Content extraction - Specific pages or Sitemaps
+        widget.config.collectHtmlPages = false;
+        widget.config.collectErrorPages = true;
+        widget.config.collectRedirectionPages = true;
+      }
     }
+    
+    // Make sure the scope screen sets auto-mark translatable for specific pages
+    // This is handled in the scope screen, not here
   }
   
   @override
@@ -103,7 +147,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
         // Title and description
         Text(
           'Fine-tune your crawl',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.notoSans(
             fontSize: 24,
             fontWeight: FontWeight.w500,
             color: Colors.black87,
@@ -112,7 +156,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
         const SizedBox(height: 8),
         Text(
           'Configure advanced settings for your crawl',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.notoSans(
             fontSize: 14,
             color: Colors.black87,
           ),
@@ -248,11 +292,11 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
 
               // Limit number of simultaneous requests
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     'Limit number of simultaneous requests (1-8)',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.notoSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: Colors.black87,
@@ -292,7 +336,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                               horizontal: 12,
                               vertical: 10,
                             ),
-                            errorStyle: GoogleFonts.roboto(
+                            errorStyle: GoogleFonts.notoSans(
                               fontSize: 0,
                               height: 0,
                             ),
@@ -312,7 +356,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
                               'Maximum value is 8',
-                              style: GoogleFonts.roboto(
+                              style: GoogleFonts.notoSans(
                                 fontSize: 12,
                                 color: Theme.of(context).colorScheme.error,
                               ),
@@ -341,7 +385,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
               // Custom user agent
               Text(
                 'Custom user agent',
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.notoSans(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Colors.black87,
@@ -350,7 +394,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
               const SizedBox(height: 4),
               Text(
                 'Optionally override the crawler\'s default user agent with one of your choice',
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.notoSans(
                   fontSize: 12,
                   color: Colors.black87,
                 ),
@@ -374,7 +418,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
               // Session Cookie
               Text(
                 'Session cookie',
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.notoSans(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Colors.black87,
@@ -383,7 +427,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
               const SizedBox(height: 4),
               Text(
                 'Login to the site and copy-paste the token of your session cookie',
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.notoSans(
                   fontSize: 12,
                   color: Colors.black87,
                 ),
@@ -413,7 +457,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
               // Bearer Token
               Text(
                 'Bearer token',
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.notoSans(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Colors.black87,
@@ -422,7 +466,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
               const SizedBox(height: 4),
               Text(
                 'Bearer tokens can be used to access protected resources',
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.notoSans(
                   fontSize: 12,
                   color: Colors.black87,
                 ),
@@ -479,7 +523,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                       children: [
                         Text(
                           title,
-                          style: GoogleFonts.roboto(
+                          style: GoogleFonts.notoSans(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                             color: Colors.black87,
@@ -488,7 +532,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                         const SizedBox(height: 4),
                         Text(
                           subtitle,
-                          style: GoogleFonts.roboto(
+                          style: GoogleFonts.notoSans(
                             fontSize: 14,
                             color: Colors.black87,
                           ),
@@ -551,7 +595,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.notoSans(
                     fontSize: 14,
                     fontWeight: FontWeight.normal,
                     color: isDisabled ? Colors.black45 : Colors.black87,
@@ -561,7 +605,7 @@ class _FinetuneScreenState extends State<FinetuneScreen> {
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.notoSans(
                       fontSize: 12,
                       color: Colors.black87,
                     ),

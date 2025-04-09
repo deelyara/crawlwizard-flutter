@@ -18,9 +18,12 @@ class InformationTooltip extends StatelessWidget {
       padding: padding,
       child: Tooltip(
         message: message,
-        textStyle: const TextStyle(color: Colors.white, fontSize: 14),
+        textStyle: TextStyle(
+          color: Theme.of(context).colorScheme.onInverseSurface,
+          fontSize: 14
+        ),
         decoration: BoxDecoration(
-          color: Colors.grey.shade700,  // Consistent gray background
+          color: Theme.of(context).colorScheme.inverseSurface,
           borderRadius: BorderRadius.circular(4),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

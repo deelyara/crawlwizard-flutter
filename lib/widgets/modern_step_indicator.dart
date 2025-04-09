@@ -30,101 +30,103 @@ class ModernStepIndicator extends StatelessWidget {
       width: 200,
       color: Colors.white,
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: List.generate(stepCount, (index) {
-          final bool isActive = index == currentStep;
-          final bool isPast = index < currentStep;
-          final bool isClickable = isPast || isActive;
-          final bool isNotLast = index < stepCount - 1;
-          
-          // Determine if this step's line should be extended
-          // (only extend the line if it's the current active step)
-          final bool extendLine = isActive && isNotLast;
-          
-          return Column(
-            children: [
-              // Step with number and text
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Column for number and connecting line
-                  SizedBox(
-                    width: 32,
-                    child: Column(
-                      children: [
-                        // Circle with number
-                        GestureDetector(
-                          onTap: isClickable ? () => onTap(index) : null,
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isActive || isPast ? primaryColor : Colors.grey.shade200,
-                              border: Border.all(
-                                color: isActive || isPast ? primaryColor : Colors.grey.shade400,
-                                width: 1,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: List.generate(stepCount, (index) {
+            final bool isActive = index == currentStep;
+            final bool isPast = index < currentStep;
+            final bool isClickable = isPast || isActive;
+            final bool isNotLast = index < stepCount - 1;
+            
+            // Determine if this step's line should be extended
+            // (only extend the line if it's the current active step)
+            final bool extendLine = isActive && isNotLast;
+            
+            return Column(
+              children: [
+                // Step with number and text
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Column for number and connecting line
+                    SizedBox(
+                      width: 32,
+                      child: Column(
+                        children: [
+                          // Circle with number
+                          GestureDetector(
+                            onTap: isClickable ? () => onTap(index) : null,
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isActive || isPast ? primaryColor : Colors.grey.shade200,
+                                border: Border.all(
+                                  color: isActive || isPast ? primaryColor : Colors.grey.shade400,
+                                  width: 1,
+                                ),
                               ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                '${index + 1}',
-                                style: GoogleFonts.roboto(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: isActive || isPast ? Colors.white : Colors.grey.shade600,
+                              child: Center(
+                                child: Text(
+                                  '${index + 1}',
+                                  style: GoogleFonts.notoSans(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: isActive || isPast ? Colors.white : Colors.grey.shade600,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                        
-                        // Gap between circle and line
-                        if (isNotLast) const SizedBox(height: 2),
-                        
-                        // Connector line with dynamic height
-                        if (isNotLast)
-                          Container(
-                            width: 1,
-                            height: extendLine ? extendedLineHeight : standardLineHeight,
-                            color: lineColor,
-                          ),
-                      ],
+                          
+                          // Gap between circle and line
+                          if (isNotLast) const SizedBox(height: 2),
+                          
+                          // Connector line with dynamic height
+                          if (isNotLast)
+                            Container(
+                              width: 1,
+                              height: extendLine ? extendedLineHeight : standardLineHeight,
+                              color: lineColor,
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                  
-                  const SizedBox(width: 12),
-                  
-                  // Step Title
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: isClickable ? () => onTap(index) : null,
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Text(
-                          stepTitles[index],
-                          style: GoogleFonts.roboto(
-                            fontSize: 14,
-                            fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
-                            color: isActive 
-                                ? selectedTextColor
-                                : (isPast ? Colors.black87 : Colors.black54),
+                    
+                    const SizedBox(width: 12),
+                    
+                    // Step Title
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: isClickable ? () => onTap(index) : null,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            stepTitles[index],
+                            style: GoogleFonts.notoSans(
+                              fontSize: 14,
+                              fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
+                              color: isActive 
+                                  ? selectedTextColor
+                                  : (isPast ? Colors.black87 : Colors.black54),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              
-              // Only add spacing if there's a connector line (for non-last items)
-              if (isNotLast)
-                SizedBox(height: stepSpacing), // Minimal spacing between steps
-            ],
-          );
-        }),
+                  ],
+                ),
+                
+                // Only add spacing if there's a connector line (for non-last items)
+                if (isNotLast)
+                  SizedBox(height: stepSpacing), // Minimal spacing between steps
+              ],
+            );
+          }),
+        ),
       ),
     );
   }

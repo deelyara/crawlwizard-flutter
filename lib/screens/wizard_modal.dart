@@ -10,6 +10,7 @@ import 'snapshot_screen.dart';
 import 'finetune_screen.dart';
 import 'recurrence_screen.dart';
 import 'review_screen.dart';
+import '../theme/button_styles.dart';
 
 class WizardModal extends StatefulWidget {
   final VoidCallback? onClose;
@@ -191,7 +192,7 @@ class _WizardModalState extends State<WizardModal> {
                   Expanded(
                       child: Text(
                         'Crawl wizard - ${_stepTitles[_currentStep]}',
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.notoSans(
                           fontSize: 18,
                           fontWeight: FontWeight.w500,
                           color: Colors.black87,
@@ -268,18 +269,18 @@ class _WizardModalState extends State<WizardModal> {
                         if (_currentStep == 0)  // Only show on first step
                           TextButton(
                             onPressed: _switchToSimplifiedMode,
-                            style: TextButton.styleFrom(
-                              foregroundColor: primaryColor,
-                            ),
+                            style: AppButtonStyles.textButton,
                             child: Tooltip(
                               message: 'Switch to a more streamlined experience with fewer options',
-                              child: Text(
-                                'Switch to simplified mode',
-                                style: GoogleFonts.roboto(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w400,
-                                ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.inverseSurface,
+                                borderRadius: BorderRadius.circular(4),
                               ),
+                              textStyle: TextStyle(
+                                color: Theme.of(context).colorScheme.onInverseSurface,
+                                fontSize: 14
+                              ),
+                              child: AppButtonStyles.buttonText('Switch to simplified mode'),
                             ),
                           ),
                       ],
@@ -292,41 +293,25 @@ class _WizardModalState extends State<WizardModal> {
                         if (_currentStep > 0)
                           TextButton(
                             onPressed: _previousStep,
-                            style: TextButton.styleFrom(
-                              foregroundColor: primaryColor,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 10,
-                              ),
-                            ),
-                            child: Text(
-                              'Back',
-                              style: GoogleFonts.roboto(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
+                            style: AppButtonStyles.textButton,
+                            child: AppButtonStyles.buttonText('Back'),
                           ),
                         
                         // Skip to review button
                         if (_currentStep >= 1 && _currentStep < 6 && !_fromReviewStep)
                           TextButton(
                             onPressed: _isCurrentStepValid() ? _skipToReview : null,
-                            style: TextButton.styleFrom(
-                              foregroundColor: primaryColor,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 10,
-                              ),
-                              disabledForegroundColor: Colors.grey.shade400,
-                            ),
-                            child: Text(
-                              'Skip to review',
-                              style: GoogleFonts.roboto(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
+                            style: AppButtonStyles.textButton.copyWith(
+                              foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                                (Set<MaterialState> states) {
+                                  if (states.contains(MaterialState.disabled)) {
+                                    return Colors.grey.shade400;
+                                  }
+                                  return primaryColor;
+                                },
                               ),
                             ),
+                            child: AppButtonStyles.buttonText('Skip to review'),
                           ),
                         
                         // Small spacing between buttons
@@ -339,25 +324,18 @@ class _WizardModalState extends State<WizardModal> {
                               : _isCurrentStepValid() 
                                   ? _nextStep 
                                   : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            foregroundColor: Colors.white,
-                            disabledBackgroundColor: Colors.grey.shade300,
-                            minimumSize: const Size(120, 40),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 10,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
+                          style: AppButtonStyles.primaryFilledButton.copyWith(
+                            backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                              (Set<MaterialState> states) {
+                                if (states.contains(MaterialState.disabled)) {
+                                  return Colors.grey.shade300;
+                                }
+                                return primaryColor;
+                              },
                             ),
                           ),
-                          child: Text(
-                            _currentStep == _stepTitles.length - 1 ? 'Start crawl!' : 'Next',
-                            style: GoogleFonts.roboto(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                            ),
+                          child: AppButtonStyles.buttonText(
+                            _currentStep == _stepTitles.length - 1 ? 'Start crawl!' : 'Next'
                           ),
                         ),
                       ],

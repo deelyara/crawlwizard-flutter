@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/crawl_config.dart';
 import '../widgets/information_tooltip.dart';
 import 'snapshot_configuration_screen.dart';
+import '../theme/button_styles.dart';
 
 class SnapshotScreen extends StatefulWidget {
   final CrawlConfig config;
@@ -21,7 +22,7 @@ class SnapshotScreen extends StatefulWidget {
 class _SnapshotScreenState extends State<SnapshotScreen> {
   // Sample data for available snapshots
   final List<String> availableSnapshots = [
-    'Latest crawl',
+    // Empty list for the "No snapshots available" state
   ];
   
   // Selected radio option for how pages should be handled
@@ -43,12 +44,22 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
   // Whether to show update resource settings message
   bool _showUpdateResourceMessage = false;
 
+  bool get _hasSnapshots => availableSnapshots.isNotEmpty;
+
   @override
   void initState() {
     super.initState();
     // Initialize with snapshots turned off by default
     _useSnapshot = false;
     _selectedOption = -1; // No option selected by default
+    
+    // Set default policy
+    _selectedPolicy = 'Always overwrite';
+    
+    // If there's only one language, select it by default
+    if (_getAvailableLanguages().length == 1) {
+      _selectedLanguage = _getAvailableLanguages().first;
+    }
   }
 
   void _updateConfig() {
@@ -96,7 +107,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
     final primaryColor = const Color(0xFF37618E);
     final containerWidth = MediaQuery.of(context).size.width - 48; // Accounting for padding
     
-    final headerStyle = GoogleFonts.roboto(
+    final headerStyle = GoogleFonts.notoSans(
       fontSize: 16,
       fontWeight: FontWeight.w500,
       color: Colors.black87,
@@ -118,37 +129,10 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
           children: [
             Text(
               'Snapshots',
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.notoSans(
                 fontSize: 24,
                 fontWeight: FontWeight.w500,
                 color: Colors.black87,
-              ),
-            ),
-            // Reload button in header
-            TextButton.icon(
-              onPressed: () {
-                setState(() {
-                  // Reset to initial state
-                  _useSnapshot = false;
-                  _selectedOption = -1;
-                  widget.config.snapshotOption = SnapshotOption.rebuildAll;
-                  widget.config.storeNewPages = false;
-                  _updateConfig();
-                });
-              },
-              icon: const Icon(Icons.refresh, size: 18),
-              label: Text(
-                'Reload this step',
-                style: GoogleFonts.roboto(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 8,
-                  horizontal: 12,
-                ),
               ),
             ),
           ],
@@ -156,32 +140,9 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
         const SizedBox(height: 8),
         Text(
           'Snapshots store and serve source website content exactly as captured during crawling, unchanged until you run a new crawl to update it.',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.notoSans(
             fontSize: 14,
             color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 16),
-        
-        // Manage snapshots button
-        TextButton.icon(
-          onPressed: _openSnapshotConfiguration,
-          icon: const Icon(Icons.launch, size: 18),
-          label: Text(
-            'Manage snapshots',
-            style: GoogleFonts.roboto(
-              fontSize: 16,
-              height: 1.4285,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.only(
-              top: 10,
-              bottom: 10,
-              left: 12,
-              right: 16,
-            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -192,7 +153,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.grey.shade300),
           ),
           child: Column(
@@ -246,7 +207,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                 const SizedBox(height: 16),
                 Text(
                   'Select snapshot to use:',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.notoSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: Colors.black87,
@@ -258,37 +219,80 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                   child: DropdownButtonFormField<String>(
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 12,
                       ),
+                      hintText: 'No snapshots available',
                     ),
-                    value: availableSnapshots.first,
-                    items: availableSnapshots.map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(
-                          value,
-                          style: GoogleFonts.roboto(
-                            fontWeight: FontWeight.normal,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (newValue) {
-                      if (newValue != null) {
-                        setState(() {
-                          widget.config.selectedSnapshot = newValue;
-                          _updateConfig();
-                        });
-                      }
-                    }
+                    value: _hasSnapshots ? availableSnapshots.first : null,
+                    items: _hasSnapshots 
+                      ? availableSnapshots.map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(
+                              value,
+                              style: GoogleFonts.notoSans(
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                          );
+                        }).toList()
+                      : [],
+                    onChanged: _hasSnapshots 
+                      ? (newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              widget.config.selectedSnapshot = newValue;
+                              _updateConfig();
+                            });
+                          }
+                        }
+                      : null,
                   ),
                 ),
                 
-                const SizedBox(height: 24),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: _openSnapshotConfiguration,
+                      style: AppButtonStyles.textButton,
+                      child: AppButtonStyles.buttonWithIcon(
+                        text: _hasSnapshots 
+                          ? 'Origin snapshot is disabled. Change settings'
+                          : 'Origin snapshot is not available. Create a snapshot',
+                        icon: Icons.launch,
+                        iconLeading: true,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        // Reload snapshots logic
+                        setState(() {
+                          // Refresh the snapshot list
+                          // Reset to initial state for origin snapshot
+                          _useSnapshot = false;
+                          _selectedOption = -1;
+                          widget.config.snapshotOption = SnapshotOption.rebuildAll;
+                          widget.config.storeNewPages = false;
+                          _updateConfig();
+                        });
+                      },
+                      style: AppButtonStyles.textButton,
+                      child: AppButtonStyles.buttonWithIcon(
+                        text: 'Reload snapshots',
+                        icon: Icons.refresh,
+                        iconLeading: true,
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 16),
                 
                 // Add back radio options with modern Material Design 3 styling
                 _buildRadioOption(
@@ -304,7 +308,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                       });
                     }
                   },
-                  isEnabled: true,
+                  isEnabled: _hasSnapshots,
                 ),
                 
                 const SizedBox(height: 8),
@@ -322,7 +326,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                       });
                     }
                   },
-                  isEnabled: true,
+                  isEnabled: _hasSnapshots,
                 ),
                 
                 const SizedBox(height: 8),
@@ -340,7 +344,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                       });
                     }
                   },
-                  isEnabled: true,
+                  isEnabled: _hasSnapshots,
                 ),
                 
                 // Message for updating resource collection settings
@@ -350,7 +354,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF0F7FF),
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: const Color(0xFFCBE2FF)),
                     ),
                     child: Row(
@@ -364,7 +368,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                         Expanded(
                           child: Text(
                             'Would you like to update resource collection settings to match the selected snapshot?',
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.notoSans(
                               fontSize: 14,
                               color: Colors.black87,
                             ),
@@ -373,22 +377,8 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                         const SizedBox(width: 12),
                         ElevatedButton(
                           onPressed: _updateResourceSettings,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF37618E),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: Text(
-                            'Update',
-                            style: GoogleFonts.roboto(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+                          style: AppButtonStyles.primaryFilledButton,
+                          child: AppButtonStyles.buttonText('Update'),
                         ),
                       ],
                     ),
@@ -407,7 +397,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(color: Colors.grey.shade300),
             ),
             child: Column(
@@ -424,11 +414,11 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEDF2F7),
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         'Admin only feature',
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.notoSans(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFF64748B),
@@ -445,7 +435,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                   children: [
                     Text(
                       'Build local cache',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.notoSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: Colors.black87,
@@ -474,7 +464,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                   // Target language header
                   Text(
                     'Select target language',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.notoSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: Colors.black87,
@@ -488,15 +478,16 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                     child: DropdownButtonFormField<String>(
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 12,
                         ),
+                        hintText: 'Select target language',
                       ),
-                      value: 'Hungarian (Hungary) [hu-HU]',
-                      items: ['Hungarian (Hungary) [hu-HU]'].map((String value) {
+                      value: _getDefaultLanguage(),
+                      items: _getAvailableLanguages().map((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
                           child: Row(
@@ -515,7 +506,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                               const SizedBox(width: 8),
                               Text(
                                 value,
-                                style: GoogleFonts.roboto(
+                                style: GoogleFonts.notoSans(
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -523,6 +514,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                           ),
                         );
                       }).toList(),
+                      // Restored to original active state
                       onChanged: (newValue) {
                         // Handle language selection
                         setState(() {
@@ -532,12 +524,47 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                     ),
                   ),
                   
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: _openSnapshotConfiguration,
+                        style: AppButtonStyles.textButton,
+                        child: AppButtonStyles.buttonWithIcon(
+                          text: 'Translation snapshot is disabled. Change settings',
+                          icon: Icons.launch,
+                          iconLeading: true,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // Reload snapshots logic
+                          setState(() {
+                            // Refresh the snapshot list
+                            // Reset translation snapshot settings
+                            widget.config.buildLocalCache = false;
+                            _selectedLanguage = null;
+                            _selectedPolicy = null;
+                            _updateConfig();
+                          });
+                        },
+                        style: AppButtonStyles.textButton,
+                        child: AppButtonStyles.buttonWithIcon(
+                          text: 'Reload snapshots',
+                          icon: Icons.refresh,
+                          iconLeading: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                  
                   const SizedBox(height: 16),
                   
                   // Policy selection dropdown
                   Text(
                     'Select policy',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.notoSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: Colors.black87,
@@ -549,7 +576,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                     child: DropdownButtonFormField<String>(
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12,
@@ -557,8 +584,8 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                         ),
                         hintText: 'Select a policy',
                       ),
+                      value: _selectedPolicy,
                       items: [
-                        'None',
                         'Never overwrite',
                         'Overwrite if better',
                         'Always overwrite'
@@ -567,12 +594,13 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                           value: value,
                           child: Text(
                             value,
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.notoSans(
                               fontWeight: FontWeight.normal,
                             ),
                           ),
                         );
                       }).toList(),
+                      // Restored to original active state
                       onChanged: (newValue) {
                         // Handle policy selection
                         setState(() {
@@ -590,7 +618,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFF7ED), // Warning background color
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: const Color(0xFFFFECD1)), // Warning border color
                     ),
                     child: Row(
@@ -605,7 +633,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                         Expanded(
                           child: Text(
                             'Select both a target language and a policy to enable local cache building.',
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.notoSans(
                               fontSize: 14,
                               color: Colors.black87,
                             ),
@@ -650,7 +678,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.notoSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: isEnabled ? Colors.black87 : Colors.black38,
@@ -659,7 +687,7 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.notoSans(
                     fontSize: 14,
                     color: isEnabled ? Colors.black54 : Colors.black26,
                   ),
@@ -670,5 +698,28 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
         ],
       ),
     );
+  }
+
+  // Add these helper methods for language handling
+  List<String> _getAvailableLanguages() {
+    // Restore to original implementation with multiple languages
+    return ['Hungarian (Hungary) [hu-HU]', 'German (Germany) [de-DE]', 'French (France) [fr-FR]'];
+  }
+  
+  String? _getDefaultLanguage() {
+    final languages = _getAvailableLanguages();
+    
+    // If a language is already selected, use that
+    if (_selectedLanguage != null) {
+      return _selectedLanguage;
+    }
+    
+    // If there's only one language, use it as default
+    if (languages.length == 1) {
+      return languages.first;
+    }
+    
+    // Otherwise, don't select a default for multiple languages
+    return null;
   }
 }

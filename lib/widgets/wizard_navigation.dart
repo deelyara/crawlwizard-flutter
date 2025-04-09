@@ -55,7 +55,7 @@ class WizardNavigation extends StatelessWidget {
                   ),
                   child: Text(
                     'Back',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.notoSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
                     ),
@@ -75,7 +75,7 @@ class WizardNavigation extends StatelessWidget {
                   ),
                   child: Text(
                     'Back to Review',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.notoSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
                     ),
@@ -102,7 +102,7 @@ class WizardNavigation extends StatelessWidget {
                 ),
                 child: Text(
                   isLastStep ? 'Start crawl!' : 'Next',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.notoSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
                   ),

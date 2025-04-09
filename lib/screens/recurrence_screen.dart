@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/crawl_config.dart';
+import '../theme/button_styles.dart';
 
 class RecurrenceScreen extends StatefulWidget {
   final CrawlConfig config;
@@ -151,6 +152,57 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
   @override
   Widget build(BuildContext context) {
     final primaryColor = const Color(0xFF37618E);
+    
+    // Check if recurrence is allowed for the current configuration
+    if (!widget.config.isRecurrenceAllowed()) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Recurrence',
+            style: GoogleFonts.notoSans(
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7ED),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFFFECD1)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: const Color(0xFFDC6803),
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    widget.config.crawlType == CrawlType.tlsContentExtraction && widget.config.generateWorkPackages
+                        ? 'Recurrence can\'t be set for TLS content extraction and work package generation'
+                        : widget.config.crawlType == CrawlType.tlsContentExtraction
+                            ? 'Recurrence can\'t be set for TLS content extraction'
+                            : 'Recurrence can\'t be set for work package generation',
+                    style: GoogleFonts.notoSans(
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     final containerWidth = MediaQuery.of(context).size.width - 48; // Accounting for padding
     
     // Check if TLS or work package is selected
@@ -163,8 +215,8 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
         children: [
           // Title and description
           Text(
-            'Set recurring crawl',
-            style: GoogleFonts.roboto(
+            'Set recurrence for this crawl',
+            style: GoogleFonts.notoSans(
               fontSize: 24,
               fontWeight: FontWeight.w500,
               color: Colors.black87,
@@ -173,7 +225,7 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
           const SizedBox(height: 8),
           Text(
             'Configure recurring crawls to automatically extract new content at specified intervals',
-            style: GoogleFonts.roboto(
+            style: GoogleFonts.notoSans(
               fontSize: 14,
               color: Colors.black87,
             ),
@@ -184,23 +236,27 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF4E5),
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: const Color(0xFFFFB74D)),
+              color: const Color(0xFFFFF7ED),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFFFECD1)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
                   Icons.warning_amber_rounded,
-                  color: const Color(0xFFED6C02),
+                  color: const Color(0xFFDC6803),
                   size: 20,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    '${isTlsSelected ? "TLS crawl" : ""}${isTlsSelected && hasWorkPackage ? " and " : ""}${hasWorkPackage ? "Work package generation" : ""} can\'t be started as recurring crawl!',
-                    style: GoogleFonts.roboto(
+                    isTlsSelected && hasWorkPackage
+                        ? 'Recurrence can\'t be set for TLS content extraction and work package generation'
+                        : isTlsSelected
+                            ? 'Recurrence can\'t be set for TLS content extraction'
+                            : 'Recurrence can\'t be set for work package generation',
+                    style: GoogleFonts.notoSans(
                       fontSize: 14,
                       color: Colors.black87,
                     ),
@@ -218,8 +274,8 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
       children: [
         // Title and description
         Text(
-          'Set recurring crawl',
-          style: GoogleFonts.roboto(
+          'Set recurrence for this crawl',
+          style: GoogleFonts.notoSans(
             fontSize: 24,
             fontWeight: FontWeight.w500,
             color: Colors.black87,
@@ -228,7 +284,7 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
         const SizedBox(height: 8),
         Text(
           'Configure recurring crawls to automatically extract new content at specified intervals',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.notoSans(
             fontSize: 14,
             color: Colors.black87,
           ),
@@ -238,7 +294,7 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
         // Crawl frequency options without container
         Text(
           'Crawl frequency',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.notoSans(
             fontSize: 16,
             fontWeight: FontWeight.w500,
             color: Colors.black87,
@@ -288,7 +344,7 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
               },
               child: Text(
                 'Every...',
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.notoSans(
                   fontSize: 14,
                   fontWeight: FontWeight.normal,
                   color: Colors.black87,
@@ -302,7 +358,15 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
                 controller: _customDaysController,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
                   ),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -321,7 +385,7 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
             const SizedBox(width: 8),
             Text(
               'days',
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.notoSans(
                 fontSize: 14,
                 fontWeight: FontWeight.normal,
                 color: Colors.black87,
@@ -335,7 +399,7 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
           const SizedBox(height: 24),
           Text(
             'The crawl is going to start ~${_getNextRunDate()} 00:00:00',
-            style: GoogleFonts.roboto(
+            style: GoogleFonts.notoSans(
               fontSize: 14,
               fontWeight: FontWeight.normal,
               color: Colors.black87,
@@ -351,10 +415,22 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
             children: [
               Text(
                 'First scheduled crawl',
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.notoSans(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Colors.black87,
+                ),
+              ),
+              const SizedBox(width: 16),
+              OutlinedButton(
+                onPressed: () => _selectDate(context),
+                style: AppButtonStyles.outlinedButton,
+                child: AppButtonStyles.buttonWithIcon(
+                  text: _selectedDate != null 
+                      ? '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}'
+                      : 'Select date',
+                  icon: Icons.calendar_today,
+                  iconLeading: true,
                 ),
               ),
               const SizedBox(width: 8),
@@ -362,37 +438,14 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEDF2F7),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   'Admin only feature',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.notoSans(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF64748B),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              OutlinedButton.icon(
-                onPressed: () => _selectDate(context),
-                icon: const Icon(Icons.calendar_today, size: 18),
-                label: Text(
-                  _selectedDate != null 
-                      ? '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}'
-                      : 'Select date',
-                  style: GoogleFonts.roboto(
-                    fontSize: 14,
-                    fontWeight: FontWeight.normal,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: primaryColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  side: BorderSide(color: Colors.grey.shade300),
-                  minimumSize: const Size(120, 40),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
                   ),
                 ),
               ),
@@ -422,7 +475,7 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
               const SizedBox(width: 12),
               Text(
                 'Use a different origin (source) snapshot for every crawl',
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.notoSans(
                   fontSize: 14,
                   fontWeight: FontWeight.normal,
                   color: Colors.black87,
@@ -437,7 +490,7 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
                 children: [
                   Text(
                     "Don't forget to ",
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.notoSans(
                       fontSize: 12,
                       color: Colors.grey[600],
                     ),
@@ -452,7 +505,7 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
                       children: [
                         Text(
                           "set snapshots",
-                          style: GoogleFonts.roboto(
+                          style: GoogleFonts.notoSans(
                             fontSize: 12,
                             color: primaryColor,
                             decoration: TextDecoration.underline,
@@ -501,7 +554,7 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
             ),
             Text(
               title,
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.notoSans(
                 fontSize: 14,
                 fontWeight: FontWeight.normal,
                 color: Colors.black87,

@@ -90,7 +90,7 @@ class _WizardContainerState extends State<WizardContainer> {
       Step(
         title: Text(
           'Type',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.notoSans(
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
@@ -105,7 +105,7 @@ class _WizardContainerState extends State<WizardContainer> {
       Step(
         title: Text(
           'Scope',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.notoSans(
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
@@ -120,7 +120,7 @@ class _WizardContainerState extends State<WizardContainer> {
       Step(
         title: Text(
           'Restrictions',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.notoSans(
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
@@ -135,7 +135,7 @@ class _WizardContainerState extends State<WizardContainer> {
       Step(
         title: Text(
           'Snapshot',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.notoSans(
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
@@ -150,7 +150,7 @@ class _WizardContainerState extends State<WizardContainer> {
       Step(
         title: Text(
           'Fine-tune',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.notoSans(
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
@@ -170,7 +170,7 @@ class _WizardContainerState extends State<WizardContainer> {
         Step(
           title: Text(
             'Recurrence',
-            style: GoogleFonts.roboto(
+            style: GoogleFonts.notoSans(
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -191,7 +191,7 @@ class _WizardContainerState extends State<WizardContainer> {
       Step(
         title: Text(
           'Review',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.notoSans(
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),

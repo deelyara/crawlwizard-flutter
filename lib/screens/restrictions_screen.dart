@@ -1,4 +1,3 @@
-// File: lib/screens/restrictions_screen.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/crawl_config.dart';
@@ -20,10 +19,14 @@ class RestrictionsScreen extends StatefulWidget {
 
 class _RestrictionsScreenState extends State<RestrictionsScreen> {
   // Current state for the restriction type (include or exclude)
-  bool _isExcludeMode = true;
+  bool? _isExcludeMode = null;
   
   // Controller for the new restriction input field
   final _restrictionController = TextEditingController();
+  
+  // Error messages for validation
+  String? _prefixError;
+  String? _regexError;
   
   // Toggle for making temporary restrictions permanent
   bool _makePermanent = false;
@@ -42,9 +45,6 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
   // Regular expression restrictions
   final List<String> _regexRestrictions = [];
   final _regexController = TextEditingController();
-
-  // Class-level tracking variable for hover state
-  bool _isDeDeChipHovered = false;
 
   @override
   void initState() {
@@ -96,29 +96,27 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
     return null;
   }
 
-  // Update the validation method to be more specific
-  bool _validatePrefixInput(String value) {
-    if (value.isEmpty) return true;
-    return value.startsWith('/');
-  }
-
-  // Update the add restriction method to use the validation
+  // Add a new restriction based on the current mode
   void _addRestriction() {
     final value = _restrictionController.text.trim();
     if (value.isEmpty) return;
     
-    if (!_validatePrefixInput(value)) {
-      setState(() {}); // Show error state
+    final error = _validatePrefix(value);
+    if (error != null) {
+      setState(() {
+        _prefixError = error;
+      });
       return;
     }
     
     setState(() {
+      _prefixError = null;
       // Handle comma-separated values
       final prefixes = value.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
       
-      if (_isExcludeMode) {
+      if (_isExcludeMode == true) {
         _tempExcludePrefixes.addAll(prefixes);
-      } else {
+      } else if (_isExcludeMode == false) {
         _tempIncludePrefixes.addAll(prefixes);
       }
       
@@ -131,14 +129,14 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
 
   // Remove a temporary restriction
   void _removeTemporaryRestriction(String prefix, bool isExclude) {
-      setState(() {
+    setState(() {
       if (isExclude) {
         _tempExcludePrefixes.remove(prefix);
       } else {
         _tempIncludePrefixes.remove(prefix);
       }
-      });
-      widget.onConfigUpdate();
+    });
+    widget.onConfigUpdate();
   }
 
   // Toggle an existing restriction (enable/disable)
@@ -158,12 +156,22 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
     final value = _regexController.text.trim();
     if (value.isEmpty) return;
     
-    setState(() {
-      _regexRestrictions.add(value);
-      // Add to config for tracking in the review screen
-      widget.config.regexRestrictions.add(value);
-      _regexController.clear();
-    });
+    // Basic regex validation
+    try {
+      RegExp(value);
+      setState(() {
+        _regexError = null;
+        _regexRestrictions.add(value);
+        // Add to config for tracking in the review screen
+        widget.config.regexRestrictions.add(value);
+        _regexController.clear();
+      });
+    } catch (e) {
+      setState(() {
+        _regexError = "Invalid regular expression pattern";
+      });
+      return;
+    }
     
     widget.onConfigUpdate();
   }
@@ -219,25 +227,45 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (isTemporary && isHovering)
-                            Icon(
-                              Icons.close,
-                              size: 16,
-                              color: chipTextColor,
-                            )
-                          else
-                            Icon(
-                              Icons.check,
-                              size: 16,
-                              color: isDisabled 
-                                ? Colors.grey.shade600 
-                                : chipTextColor,
+                          // Fixed-width container for icons to prevent layout shift
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // Check Icon (default state or non-temporary chip)
+                                Positioned(
+                                  child: Opacity(
+                                    opacity: isTemporary && isHovering ? 0.0 : 1.0, // Hide when close icon should show
+                                    child: Icon(
+                                      Icons.check,
+                                      size: 16,
+                                      color: isDisabled
+                                          ? Colors.grey.shade600
+                                          : chipTextColor,
+                                    ),
+                                  ),
+                                ),
+                                // Close Icon (only for temporary chips on hover)
+                                Positioned(
+                                  child: Opacity(
+                                    opacity: isTemporary && isHovering ? 1.0 : 0.0, // Show only when hovering temporary
+                                    child: Icon(
+                                      Icons.close,
+                                      size: 16,
+                                      color: chipTextColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             displayText,
                             style: isRegex 
-                              ? GoogleFonts.robotoMono( // Monospace for regex
+                              ? GoogleFonts.notoSansMono( // Changed from robotoMono
                                   color: isDisabled ? Colors.grey.shade600 : chipTextColor,
                                   fontSize: 14,
                                 )
@@ -252,62 +280,9 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                   ),
                 ),
               );
-            }
+            },
           );
-        }
-      ),
-    );
-  }
-
-  // Build a special locked restriction chip
-  Widget _buildLockedRestrictionChip(String prefix) {
-    final displayText = '$prefix*';
-    final chipColor = const Color(0xFFCBDCF6);
-    final chipTextColor = const Color(0xFF191C20);
-    
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isDeDeChipHovered = true),
-      onExit: (_) => setState(() => _isDeDeChipHovered = false),
-      child: Tooltip(
-        message: "Published subdirectories are always excluded from crawling",
-        verticalOffset: 20,
-        preferBelow: true,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.inverseSurface,
-          borderRadius: BorderRadius.circular(4),
-        ),
-        textStyle: Theme.of(context).tooltipTheme.textStyle ?? GoogleFonts.roboto(
-          fontSize: 12,
-          color: Theme.of(context).colorScheme.onInverseSurface,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.only(right: 8.0, bottom: 8.0),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: chipColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  _isDeDeChipHovered ? Icons.lock : Icons.check,
-                  size: 16,
-                  color: chipTextColor,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  displayText,
-                  style: TextStyle(
-                    color: chipTextColor,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        },
       ),
     );
   }
@@ -315,7 +290,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
   @override
   Widget build(BuildContext context) {
     final primaryColor = const Color(0xFF37618E);
-    final headerStyle = GoogleFonts.roboto(
+    final headerStyle = GoogleFonts.notoSans(
       fontSize: 16,
       fontWeight: FontWeight.w500,
       color: Colors.black87,
@@ -326,10 +301,10 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
+      children: [
+        Text(
           'Manage restrictions for this crawl',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.notoSans(
             fontSize: 24,
             fontWeight: FontWeight.w500,
             color: Colors.black87,
@@ -338,7 +313,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
         const SizedBox(height: 8),
         Text(
           'Define which content to include and exclude during this crawl session',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.notoSans(
             fontSize: 14,
             color: Colors.black87,
           ),
@@ -353,20 +328,20 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.grey.shade300),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-        Text(
+                Text(
                   'Existing project restrictions',
                   style: headerStyle,
-        ),
-        const SizedBox(height: 8),
-        Text(
+                ),
+                const SizedBox(height: 8),
+                Text(
                   'Click on a restriction to disable it for this crawl. Disabled restrictions will not be applied.',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.notoSans(
                     fontSize: 14,
                     color: Colors.black87,
                   ),
@@ -377,7 +352,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                 if (_existingIncludePrefixes.isNotEmpty) ...[
                   Text(
                     'Crawl pages starting with:',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.notoSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: Colors.black87,
@@ -403,7 +378,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                 if (_existingExcludePrefixes.isNotEmpty) ...[
                   Text(
                     "Don't crawl pages starting with:",
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.notoSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: Colors.black87,
@@ -413,7 +388,39 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                   Wrap(
                     children: [
                       // Add the special non-clickable /de_de/* chip at the beginning
-                      _buildLockedRestrictionChip('/de_de'),
+                      Tooltip(
+                        message: 'The custom subdirectory prefix is always excluded by the crawl',
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.forbidden,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            margin: const EdgeInsets.only(right: 8, bottom: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFCBDCF6),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.check,
+                                  size: 16,
+                                  color: Color(0xFF191C20),
+                                ),
+                                const SizedBox(width: 6),
+                                const Text(
+                                  '/de_de/*',
+                                  style: TextStyle(
+                                    color: Color(0xFF191C20),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Then add all the regular exclude prefixes
                       ..._existingExcludePrefixes.map((prefix) {
                         final isDisabled = _disabledExistingPrefixes.contains(prefix);
                         return _buildRestrictionChip(
@@ -439,12 +446,12 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.grey.shade300),
           ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               // Add temporary restrictions section
               Text(
                 'Add temporary restrictions for this crawl',
@@ -453,7 +460,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
               const SizedBox(height: 8),
               Text(
                 "Path prefixes control which pages to include or exclude.",
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.notoSans(
                   fontSize: 14,
                   color: Colors.black87,
                 ),
@@ -468,7 +475,8 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                     groupValue: _isExcludeMode,
                     onChanged: (value) {
                       setState(() {
-                        _isExcludeMode = value!;
+                        _isExcludeMode = value;
+                        _prefixError = null; // Clear error on mode change
                       });
                     },
                     activeColor: primaryColor,
@@ -481,7 +489,8 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                     groupValue: _isExcludeMode,
                     onChanged: (value) {
                       setState(() {
-                        _isExcludeMode = value!;
+                        _isExcludeMode = value;
+                        _prefixError = null; // Clear error on mode change
                       });
                     },
                     activeColor: primaryColor,
@@ -498,7 +507,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                 children: [
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(
                           height: 40,
@@ -507,71 +516,67 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                             decoration: InputDecoration(
                               hintText: 'Path prefix rule, e.g., /blog, /news/, /fr/',
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                                borderRadius: BorderRadius.circular(4),
                               ),
                               enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                                borderRadius: BorderRadius.circular(4),
+                                borderSide: BorderSide(
+                                  color: _prefixError != null ? Colors.red : Colors.grey.shade400,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
-                              ),
-                              errorBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
-                              ),
-                              focusedErrorBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
+                                borderRadius: BorderRadius.circular(4),
+                                borderSide: BorderSide(
+                                  color: _prefixError != null ? Colors.red : primaryColor,
+                                  width: 2,
+                                ),
                               ),
                               contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
+                                horizontal: 12,
                                 vertical: 10,
                               ),
-                              isDense: true,
-                              errorText: _validatePrefixInput(_restrictionController.text) ? null : 'Must start with /',
-                              errorStyle: GoogleFonts.roboto(
-                                fontSize: 12,
-                                color: Theme.of(context).colorScheme.error,
-                                height: 1,
-                              ),
                             ),
-                            onSubmitted: (_) => _addRestriction(),
                             onChanged: (value) {
-                              setState(() {});
+                              // Clear error when user types
+                              if (_prefixError != null) {
+                                setState(() {
+                                  _prefixError = null;
+                                });
+                              }
                             },
+                            onSubmitted: (_) => _addRestriction(),
                           ),
                         ),
+                        if (_prefixError != null) 
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4, left: 4),
+                            child: Text(
+                              _prefixError!,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 12),
-                  SizedBox(
-                    height: 40,
-                    child: ElevatedButton(
-                      onPressed: _addRestriction,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(88, 40),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 10,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
+                  ElevatedButton(
+                    onPressed: _isExcludeMode != null ? _addRestriction : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
                       ),
-                      child: Text(
-                        'Add',
-                        style: GoogleFonts.roboto(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                        ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
                       ),
+                      disabledBackgroundColor: Colors.grey.shade300, // Disabled color
                     ),
+                    child: const Text('Add'),
                   ),
                 ],
               ),
@@ -579,7 +584,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
               // Temporary restrictions section (only show if there are temporary restrictions)
               if (_tempIncludePrefixes.isNotEmpty || _tempExcludePrefixes.isNotEmpty) ...[
                 const SizedBox(height: 24),
-                Divider(color: Colors.grey.shade300, height: 1),
+                const Divider(height: 1),
                 const SizedBox(height: 24),
                 
                 Text(
@@ -591,7 +596,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                   _makePermanent 
                       ? 'These restrictions will be added to your project settings permanently' 
                       : 'These restrictions will only apply to this crawl session',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.notoSans(
                     fontSize: 14,
                     color: Colors.black87,
                   ),
@@ -602,7 +607,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                 if (_tempIncludePrefixes.isNotEmpty) ...[
                   Text(
                     'Crawl pages starting with:',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.notoSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: Colors.black87,
@@ -627,7 +632,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                 if (_tempExcludePrefixes.isNotEmpty) ...[
                   Text(
                     "Don't crawl pages starting with:",
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.notoSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: Colors.black87,
@@ -645,10 +650,12 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                       );
                     }).toList(),
                   ),
+                  
+                  // Add spacing before the toggle
+                  const SizedBox(height: 24),
                 ],
                 
-                // Move the toggle switch here - after the chips display
-                const SizedBox(height: 24),
+                // Switch to make temporary restrictions permanent - moved below the chip lists
                 Row(
                   children: [
                     SizedBox(
@@ -672,7 +679,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                     Expanded(
                       child: Text(
                         'Add these temporary restrictions to the project settings permanently',
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.notoSans(
                           fontSize: 14,
                           color: Colors.black87,
                         ),
@@ -694,20 +701,20 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.grey.shade300),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-        Text(
+              Text(
                 'Add regular expression restrictions',
                 style: headerStyle,
-        ),
-        const SizedBox(height: 8),
-        Text(
+              ),
+              const SizedBox(height: 8),
+              Text(
                 'Exclude the pages matching the following regular expression during this crawl',
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.notoSans(
                   fontSize: 14,
                   color: Colors.black87,
                 ),
@@ -720,7 +727,7 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                 children: [
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(
                           height: 40,
@@ -729,64 +736,76 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                             decoration: InputDecoration(
                               hintText: 'e.g /_el/dashboard/project/.*/crawl-wizard',
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                                borderRadius: BorderRadius.circular(4),
                               ),
                               enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                                borderRadius: BorderRadius.circular(4),
+                                borderSide: BorderSide(
+                                  color: _regexError != null ? Colors.red : Colors.grey.shade400,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                                borderRadius: BorderRadius.circular(4),
+                                borderSide: BorderSide(
+                                  color: _regexError != null ? Colors.red : primaryColor,
+                                  width: 2,
+                                ),
                               ),
                               contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
+                                horizontal: 12,
                                 vertical: 10,
                               ),
-                              isDense: true,
                             ),
+                            onChanged: (value) {
+                              // Clear error when user types
+                              if (_regexError != null) {
+                                setState(() {
+                                  _regexError = null;
+                                });
+                              }
+                            },
                             onSubmitted: (_) => _addRegexRestriction(),
                           ),
                         ),
+                        if (_regexError != null) 
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4, left: 4),
+                            child: Text(
+                              _regexError!,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 12),
-                  SizedBox(
-                    height: 40,
-                    child: ElevatedButton(
-                      onPressed: _addRegexRestriction,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(88, 40),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 10,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
+                  ElevatedButton(
+                    onPressed: _addRegexRestriction,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
                       ),
-                      child: Text(
-                        'Add',
-                        style: GoogleFonts.roboto(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                        ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
                       ),
                     ),
+                    child: const Text('Add'),
                   ),
                 ],
               ),
 
               // Regular expression restrictions list
               if (_regexRestrictions.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Text(
+                const SizedBox(height: 16),
+                Text(
                   'Regular expression restrictions',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.notoSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: Colors.black87,
@@ -795,12 +814,12 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'These restrictions will only apply to this crawl session',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.notoSans(
                     fontSize: 14,
                     color: Colors.black87,
                   ),
                 ),
-                  const SizedBox(height: 16),
+                const SizedBox(height: 16),
                 
                 // List of regex patterns with delete buttons
                 ...List.generate(_regexRestrictions.length, (index) {
@@ -809,14 +828,14 @@ class _RestrictionsScreenState extends State<RestrictionsScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: const Color(0xFFCBDCF6),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       children: [
                         Expanded(
-                          child: SelectableText(
+                          child: Text(
                             _regexRestrictions[index],
-                            style: GoogleFonts.robotoMono(
+                            style: GoogleFonts.notoSansMono(
                               color: const Color(0xFF191C20),
                               fontSize: 14,
                             ),
