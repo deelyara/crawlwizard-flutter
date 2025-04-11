@@ -63,7 +63,7 @@ class AppButtonStyles {
   static Widget buttonWithIcon({
     required String text,
     required IconData icon,
-    bool iconLeading = true,
+    bool iconLeading = false,
   }) {
     final textWidget = Text(
       text,

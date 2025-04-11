@@ -398,7 +398,7 @@ class _RecurrenceScreenState extends State<RecurrenceScreen> {
         if (widget.config.recurrenceFrequency != RecurrenceFrequency.none) ...[
           const SizedBox(height: 24),
           Text(
-            'The crawl is going to start ~${_getNextRunDate()} 00:00:00',
+            'The crawl is going to start ~${_getNextRunDate()}',
             style: GoogleFonts.notoSans(
               fontSize: 14,
               fontWeight: FontWeight.normal,

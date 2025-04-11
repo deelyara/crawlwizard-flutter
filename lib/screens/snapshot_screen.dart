@@ -266,20 +266,24 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                           ? 'Origin snapshot is disabled. Change settings'
                           : 'Origin snapshot is not available. Create a snapshot',
                         icon: Icons.launch,
-                        iconLeading: true,
+                        iconLeading: false,
                       ),
                     ),
                     TextButton(
                       onPressed: () {
                         // Reload snapshots logic
                         setState(() {
-                          // Refresh the snapshot list
-                          // Reset to initial state for origin snapshot
-                          _useSnapshot = false;
+                          // Refresh the snapshot list while keeping toggle on
+                          // Just reset the options and make radio options available
                           _selectedOption = -1;
                           widget.config.snapshotOption = SnapshotOption.rebuildAll;
                           widget.config.storeNewPages = false;
                           _updateConfig();
+                          
+                          // Here we would fetch new snapshots data if implemented
+                          // Simulate having snapshots available for now
+                          availableSnapshots.clear();
+                          availableSnapshots.add("Snapshot 1");
                         });
                       },
                       style: AppButtonStyles.textButton,
@@ -534,19 +538,20 @@ class _SnapshotScreenState extends State<SnapshotScreen> {
                         child: AppButtonStyles.buttonWithIcon(
                           text: 'Translation snapshot is disabled. Change settings',
                           icon: Icons.launch,
-                          iconLeading: true,
+                          iconLeading: false,
                         ),
                       ),
                       TextButton(
                         onPressed: () {
                           // Reload snapshots logic
                           setState(() {
-                            // Refresh the snapshot list
-                            // Reset translation snapshot settings
-                            widget.config.buildLocalCache = false;
+                            // Refresh the snapshot list while keeping toggle on
+                            // Just reset the selections to prompt user to choose again
                             _selectedLanguage = null;
                             _selectedPolicy = null;
                             _updateConfig();
+                            
+                            // Here we would fetch new languages and policies if implemented
                           });
                         },
                         style: AppButtonStyles.textButton,
